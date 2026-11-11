@@ -29,18 +29,7 @@ import { ShareDialog } from './ShareDialog';
 export function TopicIcon({ topic, className }: { topic: Survey['topic']; className?: string }) {
   const Icon = { ev: CarFront, smartphone: Smartphone, brand: RadioTower, general: Globe2 }[topic];
   return (
-    <span
-      className={cn(
-        'topic-icon',
-        {
-          'bg-indigo-50 text-indigo-500': topic === 'ev',
-          'bg-sky-50 text-sky-600': topic === 'smartphone',
-          'bg-amber-50 text-amber-600': topic === 'brand',
-          'bg-violet-50 text-violet-500': topic === 'general',
-        },
-        className,
-      )}
-    >
+    <span className={cn('topic-icon', className)}>
       <Icon size={18} strokeWidth={1.7} />
     </span>
   );
@@ -92,7 +81,7 @@ export function SurveyTable({
             <tr>
               <th>Survey name</th>
               <th>Status</th>
-              <th className="hidden sm:table-cell">Responses</th>
+              <th className="hidden text-right sm:table-cell">Responses</th>
               <th className="hidden md:table-cell">Last updated</th>
               <th>
                 <span className="sr-only">Actions</span>
@@ -109,7 +98,7 @@ export function SurveyTable({
                       <span className="block text-[13px] font-medium text-slate-800 group-hover:text-primary">
                         {survey.title}
                       </span>
-                      <span className="mt-1 block text-[10px] text-muted-foreground">
+                      <span className="mt-1 block text-[12px] text-muted-foreground">
                         {survey.questions.length} questions
                         <span className="sm:hidden">
                           {' '}
@@ -123,12 +112,12 @@ export function SurveyTable({
                 <td>
                   <StatusBadge status={survey.status} />
                 </td>
-                <td className="hidden sm:table-cell">
-                  <span className="text-[13px] font-medium text-slate-600">
+                <td className="hidden text-right sm:table-cell">
+                  <span className="text-[13px] font-medium tabular-nums text-slate-600">
                     {number(state.responses.filter((r) => r.surveyId === survey.id).length)}
                   </span>
                 </td>
-                <td className="hidden text-xs text-muted-foreground md:table-cell">
+                <td className="hidden text-[13px] text-muted-foreground md:table-cell">
                   {formatDate(survey.updatedAt)}
                 </td>
                 <td>

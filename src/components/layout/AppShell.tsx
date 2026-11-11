@@ -1,14 +1,6 @@
 import { Outlet, useLocation } from 'react-router-dom';
-import {
-  BarChart3,
-  ChevronLeft,
-  ChevronRight,
-  LayoutDashboard,
-  Sparkles,
-  SquareStack,
-} from 'lucide-react';
+import { BarChart3, LayoutDashboard, Sparkles, SquareStack } from 'lucide-react';
 import { SafeLink } from '@/app/navigation';
-import { useStore } from '@/app/store';
 import { cn } from '@/lib/utils';
 
 const links = [
@@ -26,31 +18,28 @@ export function Logo({ compact = false }: { compact?: boolean }) {
         <i />
       </span>
       {!compact && (
-        <span className="brand-word text-[23px] font-semibold tracking-[-1px]">
-          intergam<span className="text-primary">.</span>
+        <span className="brand-word font-semibold tracking-[-1px]">
+          intergam<span className="brand-dot">.</span>
         </span>
       )}
     </span>
   );
 }
 export function AppShell() {
-  const { state, setSidebar } = useStore();
-  const collapsed = state.preferences.sidebarCollapsed;
   const { pathname } = useLocation();
   return (
-    <div className={cn('app-shell', collapsed && 'sidebar-collapsed')}>
+    <div className="app-shell">
       <aside className="sidebar">
-        <div
-          className={cn(
-            'sidebar-brand flex h-[81px] shrink-0 items-center border-b border-border px-6',
-            collapsed && 'justify-center px-3',
-          )}
-        >
-          <SafeLink to="/" aria-label="Intergam overview">
-            <Logo compact={collapsed} />
+        <div className="sidebar-brand">
+          <SafeLink to="/" aria-label="Intergam overview" className="sidebar-home">
+            <Logo />
           </SafeLink>
         </div>
-        <nav className="mt-6 space-y-1 px-3" aria-label="Main navigation">
+        <nav
+          id="workspace-navigation"
+          className="mt-5 space-y-1.5 px-4"
+          aria-label="Main navigation"
+        >
           {links.map(({ to, title, icon: Icon }) => {
             const active =
               to === '/'
@@ -63,34 +52,14 @@ export function AppShell() {
                 title={title}
                 aria-label={title}
                 aria-current={active ? 'page' : undefined}
-                className={cn('nav-item', active && 'active', collapsed && 'justify-center px-0')}
+                className={cn('nav-item', active && 'active')}
               >
                 <Icon size={18} strokeWidth={1.7} />
-                {!collapsed && <span>{title}</span>}
+                <span>{title}</span>
               </SafeLink>
             );
           })}
         </nav>
-        <div className="sidebar-actions mt-auto px-3 pb-5">
-          <button
-            className={cn(
-              'sidebar-collapse nav-item mt-1 w-full',
-              collapsed && 'justify-center px-0',
-            )}
-            onClick={() => setSidebar(!collapsed)}
-            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            {collapsed ? (
-              <ChevronRight size={17} />
-            ) : (
-              <>
-                <ChevronLeft size={17} />
-                <span>Collapse sidebar</span>
-              </>
-            )}
-          </button>
-        </div>
       </aside>
       <div className="main-panel">
         <main id="main-content" className="page-content">

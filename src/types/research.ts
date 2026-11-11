@@ -59,5 +59,6 @@ export type DemoState = {
   surveys: Survey[];
   responses: SurveyResponse[];
   reviews: AIReview[];
+  // Retained for compatibility with saved workspaces; the sidebar is no longer collapsible.
   preferences: { sidebarCollapsed: boolean };
 };

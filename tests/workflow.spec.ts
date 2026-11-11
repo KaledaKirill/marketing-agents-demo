@@ -40,7 +40,7 @@ test('complete research journey persists locally and keeps mock analytics fixed'
   await page.getByLabel('Survey title').fill('EV Journey Research');
   await page.getByLabel('Question wording').fill('Overall, how satisfied are you with your EV?');
   await page.getByRole('button', { name: 'Save Draft', exact: true }).first().click();
-  await expect(page.getByText('Saved in this browser', { exact: true })).toBeVisible();
+  await expect(page.getByText('Unsaved changes', { exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'Preview', exact: true }).click();
   const preview = page.getByRole('dialog', { name: 'Survey preview', exact: true });
   await preview.getByRole('button', { name: 'Start survey' }).click();
@@ -135,7 +135,8 @@ test('published editing creates a draft copy and draft editing supports all ques
   await page.getByRole('button', { name: 'Edit a copy', exact: true }).click();
   await expect(page.getByLabel('Survey title')).toHaveValue('EV Customer Satisfaction (copy)');
   await page.getByLabel('Question wording').fill('Which experience matters most?');
-  await page.getByLabel('Answer type').selectOption('single_choice');
+  await page.getByRole('button', { name: 'Answer type', exact: true }).click();
+  await page.getByRole('menuitemradio', { name: 'Single choice', exact: true }).click();
   await page.getByLabel('Option 1', { exact: true }).fill('Range');
   await page.getByLabel('Option 2', { exact: true }).fill('Charging');
   await page.getByRole('button', { name: 'Add option', exact: true }).click();
@@ -204,4 +205,67 @@ test('navigation, mobile runner, responsive layouts, and missing routes work', a
   await page.getByRole('link', { name: 'Analytics', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Analytics', exact: true })).toBeVisible();
   await expect(page.getByText('Sample results', { exact: true })).toHaveCount(0);
+});
+
+test('Studio keeps the research brief stable while the agents work', async ({ page }) => {
+  await page.goto('/#/studio');
+  const brief = page.locator('.objective-panel');
+  const before = await brief.boundingBox();
+  await page.getByRole('button', { name: /Electric vehicle experience/ }).click();
+  await page.getByRole('button', { name: 'Generate Survey', exact: true }).click();
+  await expect(page.getByText('In progress', { exact: true })).toBeVisible();
+  expect(await brief.boundingBox()).toEqual(before);
+  await expect(page.getByText('Original quality score')).toBeVisible();
+  expect(await brief.boundingBox()).toEqual(before);
+});
+
+test('analytics groups text results last and the survey picker supports keyboard selection', async ({
+  page,
+}) => {
+  await page.goto('/#/analytics/smartphone-purchasing');
+  const results = page.locator('.question-results > section');
+  await expect(results).toHaveCount(7);
+  await expect(results.last()).toContainText('Text response');
+  for (let index = 0; index < 6; index++)
+    await expect(results.nth(index)).not.toContainText('Text response');
+  const picker = page.getByRole('button', { name: 'Select survey', exact: true });
+  await picker.focus();
+  await page.keyboard.press('Enter');
+  await expect(
+    page.getByRole('menuitemradio', { name: 'Smartphone Purchasing Behavior', exact: true }),
+  ).toHaveAttribute('aria-checked', 'true');
+  await page.keyboard.press('Home');
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(/analytics\/ev-satisfaction$/);
+  await expect(picker).toContainText('EV Customer Satisfaction');
+  await picker.click();
+  await page.keyboard.press('Escape');
+  await expect(picker).toBeFocused();
+});
+
+test('demo navigation leaves an unsaved draft without browser dialogs and keeps a fixed sidebar', async ({
+  page,
+}) => {
+  const dialogs: string[] = [];
+  page.on('dialog', async (dialog) => {
+    dialogs.push(dialog.message());
+    await dialog.dismiss();
+  });
+  await page.goto('/#/builder/brand-awareness');
+  await expect(page.getByText('Saved in this browser', { exact: true })).toHaveCount(0);
+  await page.getByLabel('Question wording').fill('An unsaved demo question');
+  await page.getByRole('link', { name: 'Analytics', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Analytics', exact: true })).toBeVisible();
+  await expect(page.locator('.sidebar-home .logo-mark')).toBeVisible();
+  await expect(page.locator('.sidebar-home .brand-word')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Collapse sidebar|Expand sidebar/ })).toHaveCount(
+    0,
+  );
+  await page.goto('/#/builder/brand-awareness');
+  await page.getByLabel('Question wording').fill('Another unsaved demo question');
+  await page.reload();
+  await expect(page.getByLabel('Question wording')).not.toHaveValue(
+    'Another unsaved demo question',
+  );
+  expect(dialogs).toEqual([]);
 });

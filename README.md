@@ -38,7 +38,7 @@ npm run format
 
 - **Mock AI:** agents use deterministic topic templates for EVs, smartphones, brand awareness, or general customer experience. No inference or external requests occur.
 - **Fixed analytics:** Overview response metrics and analytics charts are illustrative mock fixtures; survey and published counts reflect the workspace. Local submissions are saved and counted in survey management, but **do not update dashboards**. Completion rates are sample metrics; survey starts and abandonment are not tracked. This intentionally revises the original spec's response-driven analytics requirement.
-- **Browser-local storage:** surveys, reviews, responses, and sidebar preferences use the versioned `intergam-research-os` localStorage key. Clearing browser data removes custom work. Changes synchronize between tabs on the same origin; there is no cross-user synchronization. Storage failures show a warning and permit session-only use. Invalid or unsupported saved data requires an explicit recovery reset.
+- **Browser-local storage:** surveys, reviews, and responses use the versioned `intergam-research-os` localStorage key. Clearing browser data removes custom work. Changes synchronize between tabs on the same origin; there is no cross-user synchronization. Storage failures show a warning and permit session-only use. Invalid or unsupported saved data requires an explicit recovery reset.
 - **Sharing:** custom survey links only work in the browser where they were created. Preloaded demo links work for all visitors at `/#/survey/demo-ev-satisfaction` and `/#/survey/demo-smartphone-purchasing` (after any hosting subpath).
 - **Published studies are immutable:** editing makes a separate draft copy with new question identifiers and no responses. Publishing that copy creates a new link.
 - **Preview:** runs the shared respondent renderer against the editor buffer and never stores responses.
@@ -71,7 +71,7 @@ Open the printed preview URL **with the configured subpath**, e.g. `http://local
 
 ## Structure
 
-- `src/app`: router, guarded navigation, context/reducer, and persistence wiring.
+- `src/app`: router, navigation, context/reducer, and persistence wiring.
 - `src/types`: the shared survey, question, review, response, and storage models.
 - `src/lib`: mock agents, editing/publication utilities, and storage validation.
 - `src/data`: original studies, example responses, and independent analytics fixtures.

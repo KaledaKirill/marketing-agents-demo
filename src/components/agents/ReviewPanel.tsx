@@ -19,35 +19,35 @@ export function ReviewPanel({
   const open = review.issues.filter((i) => i.status === 'open');
   const resolved = review.issues.filter((i) => i.status !== 'open');
   return (
-    <section className="panel min-w-0">
+    <section className="panel review-panel min-w-0">
       <div className="flex items-center gap-2.5">
-        <span className="agent-symbol bg-violet-50 text-violet-500">
+        <span className="agent-symbol bg-teal-50 text-teal-500">
           <ShieldCheck size={18} />
         </span>
         <div>
           <h2 className="text-sm font-semibold">Methodology review</h2>
         </div>
       </div>
-      <div className="my-5 flex items-center gap-4 rounded-xl border border-violet-100 bg-violet-50/50 p-4">
+      <div className="my-5 flex items-center gap-4 rounded-xl border border-teal-100 bg-teal-50/50 p-4">
         <div className="relative flex size-16 shrink-0 items-center justify-center">
           <svg className="absolute inset-0 -rotate-90" viewBox="0 0 64 64" aria-hidden="true">
-            <circle cx="32" cy="32" r="27" fill="none" stroke="#e8e2ff" strokeWidth="4" />
+            <circle cx="32" cy="32" r="27" fill="none" stroke="#dcece7" strokeWidth="4" />
             <circle
               cx="32"
               cy="32"
               r="27"
               fill="none"
-              stroke="#8b6ce9"
+              stroke="#187f70"
               strokeWidth="4"
               strokeDasharray={`${review.score * 1.696} 170`}
               strokeLinecap="round"
             />
           </svg>
-          <strong className="text-xl font-semibold text-violet-700">{review.score}</strong>
+          <strong className="text-xl font-semibold text-teal-700">{review.score}</strong>
         </div>
         <div>
-          <p className="text-xs font-semibold">Original quality score</p>
-          <p className="mt-1 text-[10px] text-violet-600">
+          <p className="text-[13px] font-semibold">Original quality score</p>
+          <p className="mt-1 text-[12px] text-teal-600">
             {resolved.length} resolved · {open.length} remaining
           </p>
         </div>
@@ -55,37 +55,39 @@ export function ReviewPanel({
       {open.length === 0 && (
         <div className="rounded-lg border border-emerald-100 bg-emerald-50/60 p-4">
           <CircleCheck size={19} className="mb-2 text-emerald-600" />
-          <h3 className="text-xs font-semibold text-emerald-800">No outstanding suggestions</h3>
+          <h3 className="text-[13px] font-semibold text-emerald-800">No outstanding suggestions</h3>
         </div>
       )}
-      <div className="space-y-3">
+      <div className="review-issues">
         {open.map((issue) => {
           const index = survey.questions.findIndex((q) => q.id === issue.questionId);
           return (
-            <article key={issue.id} className="rounded-xl border border-border p-4">
+            <article key={issue.id} className="review-issue">
               <div className="mb-3 flex flex-wrap items-center gap-2">
-                <Badge variant={issue.severity === 'moderate' ? 'warning' : 'violet'}>
+                <Badge variant={issue.severity === 'moderate' ? 'warning' : 'accent'}>
                   {issue.type}
                 </Badge>
-                <span className="ml-auto text-[10px] text-slate-400">Question {index + 1}</span>
+                <span className="ml-auto text-[12px] text-slate-400">Question {index + 1}</span>
               </div>
-              <h3 className="text-xs font-semibold leading-5">
+              <h3 className="text-[13px] font-semibold leading-5">
                 {survey.questions[index]?.title ?? 'Question updated'}
               </h3>
-              <p className="mt-2 text-xs leading-6 text-muted-foreground">{issue.explanation}</p>
+              <p className="mt-2 text-[13px] leading-6 text-muted-foreground">
+                {issue.explanation}
+              </p>
               <div className="my-3 rounded-lg bg-slate-50 p-3">
-                <p className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold text-violet-600">
+                <p className="mb-1 flex items-center gap-1.5 text-[12px] font-semibold text-teal-600">
                   {issue.patch.kind === 'move' ? 'Suggested order' : 'Suggested wording'}
                 </p>
-                <p className="text-xs leading-6 text-slate-600">
+                <p className="text-[13px] leading-6 text-slate-600">
                   {issue.patch.kind === 'move'
                     ? `Move question ${index + 1} to ${issue.patch.position === 'first' ? 'the beginning' : 'the end'}.`
                     : issue.patch.title}
                 </p>
-                <p className="mt-1 text-[10px] leading-5 text-slate-400">{issue.suggestion}</p>
+                <p className="mt-1 text-[12px] leading-5 text-slate-400">{issue.suggestion}</p>
               </div>
               {!readOnly && (
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button size="sm" variant="secondary" onClick={() => onApply(issue.id)}>
                     <Check size={12} /> Apply Fix
                   </Button>
@@ -100,13 +102,13 @@ export function ReviewPanel({
       </div>
       {resolved.length > 0 && (
         <div className="mt-4 border-t border-border pt-3">
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+          <p className="mb-2 text-[12px] font-semibold uppercase tracking-wider text-slate-400">
             Review history
           </p>
           {resolved.map((issue) => (
             <div
               key={issue.id}
-              className="flex items-center gap-2 py-2 text-[10px] text-muted-foreground"
+              className="flex items-center gap-2 py-2 text-[12px] text-muted-foreground"
             >
               <CheckCheck
                 size={13}

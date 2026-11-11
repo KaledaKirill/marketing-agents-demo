@@ -7,12 +7,9 @@ import { validateAnswer } from '@/lib/survey-utils';
 type Action =
   | { type: 'survey'; survey: Survey; review?: AIReview }
   | { type: 'response'; response: SurveyResponse }
-  | { type: 'sidebar'; collapsed: boolean }
   | { type: 'replace'; state: DemoState };
 export function reducer(state: DemoState, action: Action): DemoState {
   if (action.type === 'replace') return action.state;
-  if (action.type === 'sidebar')
-    return { ...state, preferences: { sidebarCollapsed: action.collapsed } };
   if (action.type === 'response') {
     const survey = state.surveys.find(
       (s) => s.id === action.response.surveyId && s.status === 'published',
@@ -50,7 +47,6 @@ type StoreContext = {
   warning: boolean;
   saveSurvey: (survey: Survey, review?: AIReview) => void;
   submitResponse: (response: SurveyResponse) => void;
-  setSidebar: (collapsed: boolean) => void;
   reset: () => void;
 };
 const Context = createContext<StoreContext | null>(null);
@@ -87,7 +83,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     warning,
     saveSurvey: (survey, review) => dispatch({ type: 'survey', survey, review }),
     submitResponse: (response) => dispatch({ type: 'response', response }),
-    setSidebar: (collapsed) => dispatch({ type: 'sidebar', collapsed }),
     reset: () => {
       dispatch({ type: 'replace', state: createSeed() });
       setRecovery(false);

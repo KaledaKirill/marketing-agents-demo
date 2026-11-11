@@ -4,3 +4,4 @@ package-lock.json
 playwright-report
 test-results
 intergam-clickable-prototype-spec.md
+.design-review/

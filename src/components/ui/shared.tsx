@@ -9,16 +9,16 @@ export function Badge({
   variant = 'neutral',
 }: {
   children: ReactNode;
-  variant?: 'neutral' | 'success' | 'violet' | 'warning';
+  variant?: 'neutral' | 'success' | 'accent' | 'warning';
 }) {
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-medium leading-none',
+        'inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[12px] font-medium leading-none',
         {
           'bg-slate-100 text-slate-600': variant === 'neutral',
           'bg-emerald-50 text-emerald-700': variant === 'success',
-          'bg-violet-50 text-violet-600': variant === 'violet',
+          'bg-teal-50 text-teal-700': variant === 'accent',
           'bg-amber-50 text-amber-700': variant === 'warning',
         },
       )}
@@ -125,7 +125,7 @@ export function SectionTitle({
     <div className="flex items-center justify-between gap-3">
       <div>
         <h2 className="section-title">{title}</h2>
-        {subtitle && <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>}
+        {subtitle && <p className="mt-1 text-[13px] text-muted-foreground">{subtitle}</p>}
       </div>
       {action}
     </div>
@@ -133,7 +133,7 @@ export function SectionTitle({
 }
 export function Breadcrumb({ children }: { children: ReactNode }) {
   return (
-    <div className="mb-6 flex items-center gap-2 text-xs text-muted-foreground">
+    <div className="mb-6 flex items-center gap-2 text-[13px] text-muted-foreground">
       <SafeLink to="/surveys" className="hover:text-primary">
         Surveys
       </SafeLink>

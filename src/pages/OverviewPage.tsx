@@ -3,6 +3,7 @@ import { ArrowRight, Plus } from 'lucide-react';
 import { useStore } from '@/app/store';
 import { SafeLink } from '@/app/navigation';
 import { Button } from '@/components/ui/button';
+import { Select } from '@/components/ui/select';
 import { PageHeading, SectionTitle } from '@/components/ui/shared';
 import { SurveyTable } from '@/components/surveys/SurveyTable';
 import { ActivityChart } from '@/components/charts/ResearchCharts';
@@ -20,7 +21,7 @@ export default function OverviewPage() {
     { title: 'Completion rate', value: `${overviewFixture.completionRate}%` },
   ];
   return (
-    <div className="space-y-6">
+    <div className="overview-page space-y-7">
       <PageHeading
         title="Overview"
         action={
@@ -31,18 +32,33 @@ export default function OverviewPage() {
           </Button>
         }
       />
-      <section className="grid grid-cols-2 gap-4 xl:grid-cols-4" aria-label="Workspace metrics">
+      <section className="metrics-grid" aria-label="Workspace metrics">
         {metrics.map((metric) => (
           <div key={metric.title} className="metric-card">
-            <p className="text-xs text-muted-foreground">{metric.title}</p>
-            <p className="mt-3 text-[28px] font-semibold leading-none tracking-tight">
-              {metric.value}
-            </p>
+            <p className="text-[13px] text-muted-foreground">{metric.title}</p>
+            <p className="metric-value">{metric.value}</p>
           </div>
         ))}
       </section>
-      <section className="overflow-hidden rounded-xl border border-border bg-white">
-        <div className="flex items-center justify-between p-5">
+      <section className="panel min-w-0">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <SectionTitle title="Response activity" subtitle="Oct 13 – Nov 10, 2026" />
+          <Select
+            label="Activity date range"
+            className="date-range-select"
+            value={range}
+            onValueChange={setRange}
+            options={[
+              { value: '30', label: 'Last 30 days' },
+              { value: '14', label: 'Last 14 days' },
+              { value: '7', label: 'Last 7 days' },
+            ]}
+          />
+        </div>
+        <ActivityChart data={activity} />
+      </section>
+      <section className="table-panel">
+        <div className="table-panel-heading">
           <SectionTitle title="Recent surveys" />
           <Button asChild size="sm" variant="ghost">
             <SafeLink to="/surveys">
@@ -51,22 +67,6 @@ export default function OverviewPage() {
           </Button>
         </div>
         <SurveyTable surveys={state.surveys.slice(0, 4)} compact />
-      </section>
-      <section className="panel min-w-0">
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <SectionTitle title="Response activity" subtitle="Oct 13 – Nov 10, 2026" />
-          <select
-            aria-label="Activity date range"
-            className="input h-9 min-h-0 w-36 py-1 text-xs"
-            value={range}
-            onChange={(e) => setRange(e.target.value)}
-          >
-            <option value="30">Last 30 days</option>
-            <option value="14">Last 14 days</option>
-            <option value="7">Last 7 days</option>
-          </select>
-        </div>
-        <ActivityChart data={activity} />
       </section>
     </div>
   );

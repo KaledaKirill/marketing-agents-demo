@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import * as Dropdown from '@radix-ui/react-dropdown-menu';
 import {
@@ -6,7 +6,6 @@ import {
   ArrowLeft,
   ArrowUp,
   BarChart3,
-  Check,
   ChevronDown,
   CircleDot,
   CopyPlus,
@@ -28,6 +27,7 @@ import type { AIReview, Question, QuestionType, Survey } from '@/types/research'
 import { useStore } from '@/app/store';
 import { SafeLink, useAppNavigation } from '@/app/navigation';
 import { Button } from '@/components/ui/button';
+import { Select } from '@/components/ui/select';
 import { Badge, Breadcrumb, EmptyState, MissingState, StatusBadge } from '@/components/ui/shared';
 import { useConfirm } from '@/components/ui/confirm';
 import { ReviewPanel } from '@/components/agents/ReviewPanel';
@@ -69,7 +69,7 @@ export default function BuilderPage() {
 }
 function BuilderEditor({ source, initialReview }: { source: Survey; initialReview?: AIReview }) {
   const { state, saveSurvey } = useStore();
-  const { navigate, setDirty } = useAppNavigation();
+  const { navigate } = useAppNavigation();
   const confirm = useConfirm();
   const [buffer, setBuffer] = useState(() => structuredClone(source));
   const [review, setReview] = useState(() => structuredClone(initialReview));
@@ -78,14 +78,21 @@ function BuilderEditor({ source, initialReview }: { source: Survey; initialRevie
   const [preview, setPreview] = useState(false);
   const [share, setShare] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
+  const questionList = useRef<HTMLDivElement>(null);
   const readOnly = buffer.status === 'published';
   const dirty = !readOnly && JSON.stringify([buffer, review]) !== baseline;
   const selected = buffer.questions.find((q) => q.id === selectedId);
   const selectedIndex = buffer.questions.findIndex((q) => q.id === selectedId);
   useEffect(() => {
-    setDirty(dirty);
-  }, [dirty, setDirty]);
-  useEffect(() => () => setDirty(false), [setDirty]);
+    const list = questionList.current;
+    const item = list?.querySelector('[aria-pressed="true"]')?.parentElement;
+    if (!list || !item || list.scrollWidth <= list.clientWidth) return;
+    const bounds = list.getBoundingClientRect();
+    const selectedBounds = item.getBoundingClientRect();
+    if (selectedBounds.left < bounds.left) list.scrollLeft += selectedBounds.left - bounds.left;
+    else if (selectedBounds.right > bounds.right)
+      list.scrollLeft += selectedBounds.right - bounds.right;
+  }, [selectedId]);
   function updateQuestion(next: Question) {
     if (readOnly) return;
     setBuffer((prev) => ({
@@ -134,7 +141,6 @@ function BuilderEditor({ source, initialReview }: { source: Survey; initialRevie
     saveSurvey(next, review);
     setBuffer(next);
     setBaseline(JSON.stringify([next, review]));
-    setDirty(false);
     toast.success('Draft saved in this browser');
   }
   async function publish() {
@@ -157,14 +163,13 @@ function BuilderEditor({ source, initialReview }: { source: Survey; initialRevie
     saveSurvey(next, review);
     setBuffer(next);
     setBaseline(JSON.stringify([next, review]));
-    setDirty(false);
     setShare(true);
     toast.success('Your survey is published');
   }
   function copy() {
     const next = copyToDraft(buffer);
     saveSurvey(next.survey, next.review);
-    navigate(`/builder/${next.survey.id}`, true);
+    navigate(`/builder/${next.survey.id}`);
     toast.success('Your draft copy is ready');
   }
   function resolveIssue(id: string, apply: boolean) {
@@ -203,25 +208,19 @@ function BuilderEditor({ source, initialReview }: { source: Survey; initialRevie
     </Dropdown.Root>
   );
   return (
-    <div className="space-y-6">
+    <div className="builder-page space-y-6">
       <Breadcrumb>{buffer.title || 'Untitled survey'}</Breadcrumb>
-      <header className="flex flex-wrap items-start justify-between gap-4">
+      <header className="builder-heading flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="mb-2 flex items-center gap-2">
             <StatusBadge status={buffer.status} />
           </div>
-          <h1 className="max-w-2xl text-2xl">{buffer.title || 'Untitled survey'}</h1>
-          <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-            {dirty ? (
-              <>
-                <span className="size-1.5 rounded-full bg-amber-400" /> Unsaved changes
-              </>
-            ) : (
-              <>
-                <Check size={12} className="text-emerald-500" /> Saved in this browser
-              </>
-            )}
-          </p>
+          <h1 className="max-w-2xl">{buffer.title || 'Untitled survey'}</h1>
+          {dirty && (
+            <p className="mt-2 flex items-center gap-1.5 text-[13px] text-muted-foreground">
+              <span className="size-1.5 rounded-full bg-amber-400" /> Unsaved changes
+            </p>
+          )}
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => setPreview(true)}>
@@ -249,9 +248,9 @@ function BuilderEditor({ source, initialReview }: { source: Survey; initialRevie
         </div>
       </header>
       {readOnly && (
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-indigo-100 bg-indigo-50/60 p-4">
-          <LockKeyhole className="size-4 text-indigo-500" />
-          <p className="flex-1 text-xs leading-6 text-indigo-900">
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-teal-100 bg-teal-50/60 p-4">
+          <LockKeyhole className="size-4 text-teal-500" />
+          <p className="flex-1 text-[13px] leading-6 text-teal-900">
             Published survey. Create a draft copy to make changes.
           </p>
           <Button asChild size="sm" variant="ghost">
@@ -264,7 +263,7 @@ function BuilderEditor({ source, initialReview }: { source: Survey; initialRevie
       {errors.length > 0 && (
         <div
           role="alert"
-          className="rounded-lg border border-red-200 bg-red-50 p-4 text-xs leading-6 text-red-700"
+          className="rounded-lg border border-red-200 bg-red-50 p-4 text-[13px] leading-6 text-red-700"
         >
           <p className="mb-1 font-semibold">Check these fields</p>
           <ul className="list-inside list-disc">
@@ -274,7 +273,7 @@ function BuilderEditor({ source, initialReview }: { source: Survey; initialRevie
           </ul>
         </div>
       )}
-      <section className="panel">
+      <section className="panel study-details">
         <div className="mb-5 flex items-center gap-2">
           <FileText size={16} className="text-slate-400" />
           <h2 className="text-sm font-semibold">Study details</h2>
@@ -312,13 +311,13 @@ function BuilderEditor({ source, initialReview }: { source: Survey; initialRevie
           </div>
         </div>
       </section>
-      <div className="grid items-start gap-5 xl:grid-cols-[270px_minmax(0,1fr)]">
-        <aside className="panel p-4">
+      <div className="builder-workspace">
+        <aside className="panel question-navigation">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xs font-semibold">Questions</h2>
+            <h2 className="text-[13px] font-semibold">Questions</h2>
             <Badge>{buffer.questions.length}</Badge>
           </div>
-          <div className="space-y-2">
+          <div ref={questionList} className="space-y-2">
             {buffer.questions.map((q, index) => {
               const Icon = questionIcons[q.type];
               return (
@@ -331,21 +330,21 @@ function BuilderEditor({ source, initialReview }: { source: Survey; initialRevie
                     onClick={() => setSelectedId(q.id)}
                     aria-pressed={selectedId === q.id}
                   >
-                    <span className="mt-0.5 text-[10px] text-slate-400">
+                    <span className="mt-0.5 text-[12px] text-slate-400">
                       {String(index + 1).padStart(2, '0')}
                     </span>
                     <span className="min-w-0">
-                      <span className="line-clamp-2 text-xs font-medium leading-5">
+                      <span className="line-clamp-2 text-[13px] font-medium leading-5">
                         {q.title || 'Untitled question'}
                       </span>
-                      <span className="mt-1.5 flex items-center gap-1 text-[9px] text-slate-400">
+                      <span className="mt-1.5 flex items-center gap-1 text-[12px] text-slate-400">
                         <Icon size={10} />
                         {typeLabels[q.type]}
                       </span>
                     </span>
                   </button>
                   {!readOnly && selectedId === q.id && (
-                    <div className="flex flex-col justify-center border-l border-indigo-100 px-1">
+                    <div className="flex flex-col justify-center border-l border-teal-100 px-1">
                       <button
                         className="reorder-button"
                         aria-label={`Move question ${index + 1} up`}
@@ -369,14 +368,14 @@ function BuilderEditor({ source, initialReview }: { source: Survey; initialRevie
             })}
           </div>
           {!readOnly && <div className="mt-4">{addMenu}</div>}
-          <p className="mt-4 text-[10px] leading-5 text-slate-400">
+          <p className="mt-4 text-[12px] leading-5 text-slate-400">
             {readOnly
               ? 'Published questions are locked.'
               : 'Select a question to edit. Use the arrows to adjust the flow.'}
           </p>
         </aside>
         {selected ? (
-          <section className="panel p-5 sm:p-6">
+          <section className="panel question-editor">
             <div className="mb-6 flex items-center justify-between border-b border-border pb-4">
               <div className="flex items-center gap-2">
                 <span className="question-number">
@@ -432,24 +431,22 @@ function BuilderEditor({ source, initialReview }: { source: Survey; initialRevie
                   <label className="field-label" htmlFor="question-type">
                     Answer type
                   </label>
-                  <select
+                  <Select
                     id="question-type"
-                    className="input"
+                    label="Answer type"
                     value={selected.type}
                     disabled={readOnly}
-                    onChange={(e) =>
-                      updateQuestion(changeQuestionType(selected, e.target.value as QuestionType))
+                    onValueChange={(value) =>
+                      updateQuestion(changeQuestionType(selected, value as QuestionType))
                     }
-                  >
-                    {questionTypes.map((type) => (
-                      <option key={type} value={type}>
-                        {typeLabels[type]}
-                      </option>
-                    ))}
-                  </select>
+                    options={questionTypes.map((type) => ({
+                      value: type,
+                      label: typeLabels[type],
+                    }))}
+                  />
                 </div>
                 <div className="flex items-end pb-2">
-                  <label className="flex cursor-pointer items-center gap-2.5 text-xs">
+                  <label className="flex cursor-pointer items-center gap-2.5 text-[13px]">
                     <input
                       type="checkbox"
                       className="toggle"
@@ -464,7 +461,7 @@ function BuilderEditor({ source, initialReview }: { source: Survey; initialRevie
               {'options' in selected && (
                 <div>
                   <p className="field-label">Answer options</p>
-                  <p className="mb-3 text-[10px] text-muted-foreground">
+                  <p className="mb-3 text-[12px] text-muted-foreground">
                     At least two distinct options. Keep each answer clear and specific.
                   </p>
                   <div className="space-y-2">
@@ -531,7 +528,7 @@ function BuilderEditor({ source, initialReview }: { source: Survey; initialRevie
               )}
               {(selected.type === 'rating' || selected.type === 'nps') && (
                 <div className="rounded-xl border border-dashed border-border bg-slate-50/50 p-5">
-                  <p className="mb-4 text-xs text-muted-foreground">
+                  <p className="mb-4 text-[13px] text-muted-foreground">
                     {selected.type === 'nps'
                       ? 'Recommendation score from 0 (not at all likely) to 10 (extremely likely).'
                       : 'Respondents choose a rating from 1 to 5.'}
@@ -553,10 +550,10 @@ function BuilderEditor({ source, initialReview }: { source: Survey; initialRevie
               )}
               {selected.type === 'text' && (
                 <div>
-                  <label className="mb-3 flex items-center gap-2 text-xs">
+                  <label className="mb-3 flex items-center gap-2 text-[13px]">
                     <input
                       type="checkbox"
-                      className="accent-indigo-600"
+                      className="accent-teal-600"
                       checked={selected.multiline}
                       disabled={readOnly}
                       onChange={(e) => updateQuestion({ ...selected, multiline: e.target.checked })}
@@ -565,7 +562,7 @@ function BuilderEditor({ source, initialReview }: { source: Survey; initialRevie
                   </label>
                   <div
                     className={cn(
-                      'rounded-lg border border-dashed border-border bg-slate-50 p-3 text-xs text-slate-400',
+                      'rounded-lg border border-dashed border-border bg-slate-50 p-3 text-[13px] text-slate-400',
                       selected.multiline && 'min-h-24',
                     )}
                   >
@@ -575,7 +572,7 @@ function BuilderEditor({ source, initialReview }: { source: Survey; initialRevie
               )}
             </div>
             <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
-              <span className="text-[10px] text-muted-foreground">
+              <span className="text-[12px] text-muted-foreground">
                 Question {selectedIndex + 1} of {buffer.questions.length}
               </span>
               {selectedIndex < buffer.questions.length - 1 && (
@@ -612,7 +609,7 @@ function BuilderEditor({ source, initialReview }: { source: Survey; initialRevie
           readOnly={readOnly}
         />
       )}
-      <div className="flex justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <Button asChild variant="ghost">
           <SafeLink to="/surveys">
             <ArrowLeft /> Back to surveys

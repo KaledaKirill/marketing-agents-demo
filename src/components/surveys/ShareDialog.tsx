@@ -32,7 +32,7 @@ export function ShareDialog({
           </span>
           <div>
             <p className="text-sm font-semibold text-emerald-900">Published successfully</p>
-            <p className="mt-1 text-xs text-emerald-700">{survey.title}</p>
+            <p className="mt-1 text-[13px] text-emerald-700">{survey.title}</p>
           </div>
         </div>
         <label htmlFor="share-link" className="field-label">
@@ -43,7 +43,7 @@ export function ShareDialog({
             <Link2 className="absolute left-3 top-3 size-4 text-slate-400" />
             <input
               id="share-link"
-              className="input pl-9 text-xs"
+              className="input pl-9 text-[13px]"
               value={link}
               readOnly
               onFocus={(e) => e.target.select()}
@@ -59,7 +59,7 @@ export function ShareDialog({
             {copied ? <Check /> : <Copy />}
           </Button>
         </div>
-        <p className="mt-3 text-xs leading-6 text-muted-foreground">
+        <p className="mt-3 text-[13px] leading-6 text-muted-foreground">
           {survey.seeded
             ? 'This preloaded survey is available to all visitors.'
             : 'This survey link only works in this browser.'}

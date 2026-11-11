@@ -29,7 +29,7 @@ export default function PublicSurveyPage() {
       <footer className="mx-auto w-full max-w-5xl px-5 py-7 text-center">
         <SafeLink
           to="/surveys"
-          className="mt-4 inline-flex items-center gap-1 text-[10px] text-slate-500 hover:text-primary"
+          className="mt-4 inline-flex items-center gap-1 text-[12px] text-slate-500 hover:text-primary"
         >
           <ArrowLeft size={11} /> Return to workspace
         </SafeLink>

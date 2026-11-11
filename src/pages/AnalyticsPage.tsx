@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { useStore } from '@/app/store';
 import { SafeLink, useAppNavigation } from '@/app/navigation';
 import { Button } from '@/components/ui/button';
+import { Select } from '@/components/ui/select';
 import {
   Badge,
   EmptyState,
@@ -64,7 +65,7 @@ export default function AnalyticsPage() {
       />
     );
   return (
-    <div className="space-y-6">
+    <div className="analytics-page space-y-7">
       <PageHeading
         title="Analytics"
         action={
@@ -90,31 +91,27 @@ export default function AnalyticsPage() {
           </>
         }
       />
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-white p-4">
-        <div className="flex min-w-0 flex-wrap items-center gap-3">
-          <BarChart3 size={17} className="text-primary" />
+      <div className="survey-selector flex flex-wrap items-center justify-between gap-4">
+        <div className="analytics-study-control">
+          <BarChart3 size={17} className="text-primary" aria-hidden="true" />
           <label htmlFor="analytics-survey" className="sr-only">
             Select survey
           </label>
-          <select
+          <Select
             id="analytics-survey"
-            className="max-w-full rounded-md bg-white text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            label="Select survey"
+            className="analytics-select"
             value={survey.id}
-            onChange={(e) => navigate(`/analytics/${e.target.value}`)}
-          >
-            {published.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.title}
-              </option>
-            ))}
-          </select>
+            onValueChange={(value) => navigate(`/analytics/${value}`)}
+            options={published.map((s) => ({ value: s.id, label: s.title }))}
+          />
           <StatusBadge status="published" />
         </div>
-        <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+        <span className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
           <CalendarDays size={12} /> Published {formatDate(survey.publishedAt ?? survey.createdAt)}
         </span>
       </div>
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="metrics-grid" aria-label="Survey metrics">
         {[
           {
             title: 'Responses',
@@ -142,12 +139,12 @@ export default function AnalyticsPage() {
           },
         ].map(({ title, value, detail, icon: Icon }) => (
           <div className="metric-card" key={title}>
-            <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+            <div className="flex items-center justify-between text-[12px] text-muted-foreground">
               <span>{title}</span>
               <Icon size={15} />
             </div>
-            <p className="my-4 text-3xl font-semibold tracking-tight">{value}</p>
-            <p className="text-[9px] leading-5 text-slate-400">{detail}</p>
+            <p className="metric-value">{value}</p>
+            <p className="text-[12px] leading-5 text-slate-400">{detail}</p>
           </div>
         ))}
       </section>
@@ -159,10 +156,14 @@ export default function AnalyticsPage() {
       </section>
       <div className="flex items-center justify-between pt-2">
         <SectionTitle title="Question results" />
-        <span className="text-[10px] text-slate-400">{survey.questions.length} questions</span>
+        <span className="text-[12px] text-slate-400">{survey.questions.length} questions</span>
       </div>
-      <div className="grid items-start gap-5 xl:grid-cols-2">
-        {survey.questions.map((q, index) => {
+      <div className="question-results grid items-stretch gap-5 xl:grid-cols-2">
+        {[
+          ...survey.questions.filter((q) => q.type !== 'text'),
+          ...survey.questions.filter((q) => q.type === 'text'),
+        ].map((q) => {
+          const index = survey.questions.findIndex((question) => question.id === q.id);
           const data = fixture.questions.find((item) => item.questionId === q.id)!;
           return (
             <section
@@ -180,7 +181,7 @@ export default function AnalyticsPage() {
                   <span className="text-2xl font-semibold tracking-tight">
                     {data.average.toFixed(1)}
                   </span>
-                  <span className="text-xs text-muted-foreground">/ 5 average rating</span>
+                  <span className="text-[13px] text-muted-foreground">/ 5 average rating</span>
                 </div>
               )}
               {data.nps && (
@@ -193,9 +194,9 @@ export default function AnalyticsPage() {
                           ? `+${data.nps.score}`
                           : data.nps.score}
                     </strong>
-                    <span className="text-xs text-muted-foreground">NPS</span>
+                    <span className="text-[13px] text-muted-foreground">NPS</span>
                   </div>
-                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-muted-foreground">
+                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-muted-foreground">
                     {(
                       [
                         ['Promoters', data.nps.promoters],
@@ -217,9 +218,9 @@ export default function AnalyticsPage() {
                       key={text.respondent}
                       className="rounded-lg border border-border bg-slate-50/60 p-4"
                     >
-                      <Quote size={15} className="mb-3 text-violet-300" />
-                      <p className="text-xs leading-6 text-slate-600">{text.text}</p>
-                      <p className="mt-4 text-[10px] text-slate-400">{text.respondent}</p>
+                      <Quote size={15} className="mb-3 text-teal-300" />
+                      <p className="text-[13px] leading-6 text-slate-600">{text.text}</p>
+                      <p className="mt-4 text-[12px] text-slate-400">{text.respondent}</p>
                     </article>
                   ))}
                 </div>
@@ -229,7 +230,7 @@ export default function AnalyticsPage() {
                     data={data.distribution}
                     rating={q.type === 'rating' || q.type === 'nps'}
                   />
-                  <p className="mt-2 text-[10px] text-slate-400">
+                  <p className="mt-2 text-[12px] text-slate-400">
                     {q.type === 'multiple_choice'
                       ? 'Multiple selections allowed · Totals can exceed sample respondent count.'
                       : `${number(fixture.total)} responses`}

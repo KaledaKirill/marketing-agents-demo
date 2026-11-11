@@ -46,7 +46,7 @@ export function QuestionInput({
             maxLength={5000}
           />
         )}
-        <p className="mt-2 text-right text-xs text-muted-foreground">
+        <p className="mt-2 text-right text-[13px] text-muted-foreground">
           {typeof answer === 'string' ? answer.length : 0} / 5,000
         </p>
       </div>
@@ -85,7 +85,7 @@ export function QuestionInput({
             ),
           )}
         </div>
-        <div className="mt-3 flex justify-between text-xs text-muted-foreground">
+        <div className="mt-3 flex justify-between text-[13px] text-muted-foreground">
           <span>{question.type === 'nps' ? 'Not at all likely' : 'Low'}</span>
           <span>{question.type === 'nps' ? 'Extremely likely' : 'High'}</span>
         </div>
@@ -172,7 +172,7 @@ export function SurveyRunner({
         <p className="mt-5 text-sm leading-7 text-muted-foreground">
           {survey.description || 'Share your thoughts in this short research study.'}
         </p>
-        <div className="my-7 flex flex-wrap gap-4 text-xs text-muted-foreground">
+        <div className="my-7 flex flex-wrap gap-4 text-[13px] text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <Clock3 size={14} /> About {Math.max(1, Math.ceil(survey.questions.length / 3))} minutes
           </span>
@@ -188,7 +188,7 @@ export function SurveyRunner({
         >
           Start survey <ArrowRight />
         </Button>
-        <p className="mt-5 text-[11px] leading-5 text-muted-foreground">
+        <p className="mt-5 text-[12px] leading-5 text-muted-foreground">
           {preview
             ? 'Preview mode · Answers will not be saved.'
             : 'Answers are stored in this browser.'}
@@ -230,7 +230,7 @@ export function SurveyRunner({
   };
   return (
     <div className="py-2">
-      <div className="mb-3 flex items-center justify-between text-xs text-muted-foreground">
+      <div className="mb-3 flex items-center justify-between text-[13px] text-muted-foreground">
         <span>
           Question {index + 1} of {survey.questions.length}
         </span>

@@ -16,6 +16,7 @@ import { useAppNavigation } from '@/app/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge, PageHeading } from '@/components/ui/shared';
 import { ReviewPanel } from '@/components/agents/ReviewPanel';
+import { TopicIcon } from '@/components/surveys/SurveyTable';
 import {
   applyReviewSuggestion,
   examplePrompts,
@@ -90,114 +91,140 @@ export default function StudioPage() {
     toast.success(apply ? 'Question updated' : 'Suggestion dismissed');
   }
   return (
-    <div className="space-y-6">
+    <div className="studio-page space-y-7">
       <PageHeading
         title="AI Research Studio"
         description="Generate a survey from a research objective."
       />
-      <section className="panel">
-        <label htmlFor="objective" className="field-label">
-          Research objective
-        </label>
-        <textarea
-          id="objective"
-          className="input min-h-32 resize-y text-sm leading-7"
-          placeholder="What do you want to learn, and from whom?"
-          value={objective}
-          onChange={(e) => {
-            setObjective(e.target.value);
-            setError('');
-          }}
-          disabled={busy}
-          maxLength={2000}
-          aria-invalid={!!error}
-        />
-        {error && (
-          <p role="alert" className="mt-3 text-xs text-red-600">
-            {error}
-          </p>
-        )}
-        <div className="mt-4 flex flex-wrap gap-2">
-          {examplePrompts.map((prompt) => (
-            <button
-              key={prompt.topic}
-              className="example-prompt"
-              disabled={busy}
-              onClick={() => {
-                setObjective(prompt.objective);
-                setError('');
-              }}
-            >
-              {prompt.label}
-              <ChevronRight size={11} />
-            </button>
-          ))}
-        </div>
-        <div className="mt-5 flex justify-end">
-          <Button disabled={busy} onClick={() => void generate()}>
-            {busy ? (
-              <LoaderCircle className="animate-spin" />
-            ) : stage === 'ready' ? (
-              <RotateCcw />
-            ) : (
-              <Sparkles />
-            )}
-            {busy
-              ? 'Generating…'
-              : stage === 'ready'
-                ? 'Generate another draft'
-                : 'Generate Survey'}
-          </Button>
-        </div>
-      </section>
-      {stage !== 'idle' && stage !== 'error' && (
-        <section className="pipeline" aria-live="polite">
-          {[
-            {
-              label: 'Design Agent',
-              state: stage === 'design' ? 'working' : 'done',
-              icon: Sparkles,
-            },
-            {
-              label: 'Methodology Critic',
-              state: stage === 'design' ? 'waiting' : stage === 'critic' ? 'working' : 'done',
-              icon: CheckCheck,
-            },
-            {
-              label: 'Ready to edit',
-              state: stage === 'ready' ? 'done' : 'waiting',
-              icon: FileText,
-            },
-          ].map((step, index) => (
-            <div className="pipeline-step" key={step.label}>
-              <span
-                className={cn(
-                  'pipeline-icon',
-                  step.state === 'done' && 'done',
-                  step.state === 'working' && 'working',
-                )}
+      <div className="studio-workbench">
+        <section className="panel objective-panel">
+          <div className="brief-heading">
+            <span className="brief-icon">
+              <Sparkles size={18} />
+            </span>
+            <label htmlFor="objective" className="objective-label">
+              Research objective
+            </label>
+          </div>
+          <textarea
+            id="objective"
+            className="input objective-input resize-y"
+            placeholder="What do you want to learn, and from whom?"
+            value={objective}
+            onChange={(e) => {
+              setObjective(e.target.value);
+              setError('');
+            }}
+            disabled={busy}
+            maxLength={2000}
+            aria-invalid={!!error}
+            aria-describedby={error ? 'objective-error' : undefined}
+          />
+          {error && (
+            <p id="objective-error" role="alert" className="mt-3 text-[13px] text-red-600">
+              {error}
+            </p>
+          )}
+          <p className="mb-3 mt-5 text-[12px] text-muted-foreground">Try an example</p>
+          <div className="prompt-options">
+            {examplePrompts.map((prompt) => (
+              <button
+                key={prompt.topic}
+                className="example-prompt"
+                aria-pressed={objective === prompt.objective}
+                disabled={busy}
+                onClick={() => {
+                  setObjective(prompt.objective);
+                  setError('');
+                }}
               >
-                {step.state === 'working' ? (
-                  <LoaderCircle size={18} className="animate-spin" />
-                ) : step.state === 'done' ? (
-                  <Check size={18} />
-                ) : (
-                  <step.icon size={17} />
-                )}
-              </span>
-              <p className="text-xs font-medium">{step.label}</p>
-              {index < 2 && (
-                <ArrowRight size={15} className="ml-auto hidden text-slate-300 md:block" />
+                <TopicIcon topic={prompt.topic as Survey['topic']} />
+                <span>{prompt.label}</span>
+                <ChevronRight size={13} className="shrink-0" />
+              </button>
+            ))}
+          </div>
+          <div className="objective-actions">
+            <Button disabled={busy} onClick={() => void generate()}>
+              {busy ? (
+                <LoaderCircle className="animate-spin" />
+              ) : stage === 'ready' ? (
+                <RotateCcw />
+              ) : (
+                <Sparkles />
               )}
-            </div>
-          ))}
+              {busy
+                ? 'Generating…'
+                : stage === 'ready'
+                  ? 'Generate another draft'
+                  : 'Generate Survey'}
+            </Button>
+          </div>
         </section>
-      )}
+        <aside className="workflow-panel" aria-label="Research workflow" aria-live="polite">
+          <div className="workflow-heading">
+            <h2>Research workflow</h2>
+            <span className={cn('workflow-status', busy && 'working', stage === 'ready' && 'done')}>
+              {busy ? 'In progress' : stage === 'ready' ? 'Complete' : 'Not started'}
+            </span>
+          </div>
+          <ol className="workflow-steps">
+            {[
+              {
+                label: 'Design Agent',
+                description: 'Turns your objective into survey questions.',
+                state:
+                  stage === 'design'
+                    ? 'working'
+                    : stage === 'critic' || stage === 'ready'
+                      ? 'done'
+                      : 'waiting',
+                icon: Sparkles,
+              },
+              {
+                label: 'Methodology Critic',
+                description: 'Checks wording, bias, and question flow.',
+                state: stage === 'critic' ? 'working' : stage === 'ready' ? 'done' : 'waiting',
+                icon: CheckCheck,
+              },
+              {
+                label: 'Ready to edit',
+                description: 'Review suggestions and open the builder.',
+                state: stage === 'ready' ? 'done' : 'waiting',
+                icon: FileText,
+              },
+            ].map((step) => (
+              <li className="workflow-step" data-state={step.state} key={step.label}>
+                <span className="workflow-step-icon">
+                  {step.state === 'working' ? (
+                    <LoaderCircle size={17} className="animate-spin" />
+                  ) : step.state === 'done' ? (
+                    <Check size={17} />
+                  ) : (
+                    <step.icon size={17} />
+                  )}
+                </span>
+                <div>
+                  <h3>{step.label}</h3>
+                  <p>{step.description}</p>
+                  <span className="workflow-step-state">
+                    {step.state === 'working'
+                      ? 'Working'
+                      : step.state === 'done'
+                        ? 'Complete'
+                        : 'Waiting'}
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </aside>
+      </div>
       {survey && (
-        <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="studio-results grid items-start gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
           <section className="panel">
             <h2 className="text-lg font-semibold">{survey.title}</h2>
-            <p className="mt-2 text-xs leading-6 text-muted-foreground">{survey.description}</p>
+            <p className="mt-2 text-[13px] leading-6 text-muted-foreground">{survey.description}</p>
             <div className="mt-4 divide-y divide-border">
               {survey.questions.map((q, index) => (
                 <article className="py-4" key={q.id}>
@@ -207,7 +234,7 @@ export default function StudioPage() {
                     {review?.issues.some(
                       (i) => i.questionId === q.id && i.status === 'applied',
                     ) && (
-                      <span className="ml-auto flex items-center gap-1 text-[10px] text-emerald-600">
+                      <span className="ml-auto flex items-center gap-1 text-[12px] text-emerald-600">
                         <Check size={11} /> Updated
                       </span>
                     )}
@@ -218,7 +245,7 @@ export default function StudioPage() {
                       {q.options.map((option) => (
                         <span
                           key={option}
-                          className="rounded-md border border-border px-2 py-1 text-[10px] text-muted-foreground"
+                          className="rounded-md border border-border px-2 py-1 text-[12px] text-muted-foreground"
                         >
                           {option}
                         </span>
@@ -242,7 +269,7 @@ export default function StudioPage() {
               </Button>
             </div>
           ) : (
-            <div className="panel flex items-center gap-3 text-xs text-muted-foreground">
+            <div className="panel flex items-center gap-3 text-[13px] text-muted-foreground">
               <LoaderCircle className="size-4 animate-spin" /> Reviewing questions…
             </div>
           )}
