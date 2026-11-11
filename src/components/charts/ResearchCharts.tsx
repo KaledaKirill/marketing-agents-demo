@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { useMediaQuery } from '@/lib/use-media-query';
 import {
   Area,
   AreaChart,
@@ -20,6 +21,7 @@ const tooltipStyle = {
 };
 export function ActivityChart({ data }: { data: Activity }) {
   const id = useId().replace(/:/g, '');
+  const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   return (
     <div
       className="activity-chart"
@@ -61,7 +63,9 @@ export function ActivityChart({ data }: { data: Activity }) {
             strokeWidth={2.5}
             fill={`url(#${id})`}
             activeDot={{ r: 4, stroke: 'white', strokeWidth: 3 }}
-            isAnimationActive={false}
+            isAnimationActive={!reducedMotion}
+            animationDuration={1200}
+            animationEasing="ease-in-out"
           />
         </AreaChart>
       </ResponsiveContainer>
@@ -75,6 +79,7 @@ export function DistributionChart({
   data: { name: string; value: number }[];
   rating?: boolean;
 }) {
+  const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   const summary = `Response distribution: ${data.map((d) => `${d.name}: ${d.value}`).join(', ')}`;
   if (!rating) {
     const maximum = Math.max(1, ...data.map((point) => point.value));
@@ -123,7 +128,9 @@ export function DistributionChart({
             fill="#5b9b83"
             radius={[4, 4, 0, 0]}
             maxBarSize={32}
-            isAnimationActive={false}
+            isAnimationActive={!reducedMotion}
+            animationDuration={1050}
+            animationEasing="ease-in-out"
           >
             <LabelList dataKey="value" position="top" fill="#647966" fontSize={11} offset={8} />
           </Bar>

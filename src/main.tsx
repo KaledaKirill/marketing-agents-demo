@@ -1,6 +1,7 @@
 import { StrictMode, Component, type ErrorInfo, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles.css';
+import './motion.css';
 import App from './app/App';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: boolean }> {

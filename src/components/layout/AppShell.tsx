@@ -63,7 +63,9 @@ export function AppShell() {
       </aside>
       <div className="main-panel">
         <main id="main-content" className="page-content">
-          <Outlet />
+          <div className="page-arrival" key={pathname}>
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

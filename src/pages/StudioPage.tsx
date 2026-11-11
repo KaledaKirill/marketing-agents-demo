@@ -2,11 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import {
   ArrowRight,
   Check,
-  CheckCheck,
   ChevronRight,
   FileText,
   LoaderCircle,
   RotateCcw,
+  ShieldCheck,
   Sparkles,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -16,6 +16,11 @@ import { useAppNavigation } from '@/app/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge, PageHeading } from '@/components/ui/shared';
 import { ReviewPanel } from '@/components/agents/ReviewPanel';
+import {
+  AgentWorkflow,
+  ReviewProgress,
+  type ResearchStage,
+} from '@/components/agents/AgentWorkflow';
 import { TopicIcon } from '@/components/surveys/SurveyTable';
 import {
   applyReviewSuggestion,
@@ -24,17 +29,22 @@ import {
   reviewSurvey,
 } from '@/lib/mock-agents';
 import { typeLabels } from '@/lib/survey-utils';
-import { cn } from '@/lib/utils';
+import { useListMotion } from '@/lib/use-list-motion';
 
-type Stage = 'idle' | 'design' | 'critic' | 'ready' | 'error';
+const AGENT_DURATION_MS = 2500;
+
 export default function StudioPage() {
   const { saveSurvey } = useStore();
   const { navigate } = useAppNavigation();
   const [objective, setObjective] = useState('');
-  const [stage, setStage] = useState<Stage>('idle');
+  const [stage, setStage] = useState<ResearchStage>('idle');
   const [survey, setSurvey] = useState<Survey | null>(null);
   const [review, setReview] = useState<AIReview | null>(null);
   const [error, setError] = useState('');
+  const [checkedCount, setCheckedCount] = useState(0);
+  const questionList = useListMotion(
+    survey?.questions.map((q) => `${q.id}:${q.title}`).join('|') ?? '',
+  );
   const run = useRef(0);
   const busy = stage === 'design' || stage === 'critic';
   useEffect(
@@ -54,14 +64,20 @@ export default function StudioPage() {
     setStage('design');
     setSurvey(null);
     setReview(null);
+    setCheckedCount(0);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1100));
+      await new Promise((resolve) => setTimeout(resolve, AGENT_DURATION_MS));
       if (run.current !== current) return;
       const draft = generateSurvey(objective);
       setSurvey(draft);
       setStage('critic');
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      if (run.current !== current) return;
+      for (let index = 0; index < draft.questions.length; index += 1) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, AGENT_DURATION_MS / draft.questions.length),
+        );
+        if (run.current !== current) return;
+        setCheckedCount(index + 1);
+      }
       const result = reviewSurvey(draft);
       setReview(result);
       saveSurvey(draft, result);
@@ -91,10 +107,10 @@ export default function StudioPage() {
     toast.success(apply ? 'Question updated' : 'Suggestion dismissed');
   }
   return (
-    <div className="studio-page space-y-7">
+    <div className="studio-page space-y-7" data-stage={stage}>
       <PageHeading
         title="AI Research Studio"
-        description="Generate a survey from a research objective."
+        description="Generate a survey from your objective, then review AI suggestions."
       />
       <div className="studio-workbench">
         <section className="panel objective-panel">
@@ -161,76 +177,81 @@ export default function StudioPage() {
             </Button>
           </div>
         </section>
-        <aside className="workflow-panel" aria-label="Research workflow" aria-live="polite">
-          <div className="workflow-heading">
-            <h2>Research workflow</h2>
-            <span className={cn('workflow-status', busy && 'working', stage === 'ready' && 'done')}>
-              {busy ? 'In progress' : stage === 'ready' ? 'Complete' : 'Not started'}
+        <AgentWorkflow
+          stage={stage}
+          questionCount={survey?.questions.length ?? 0}
+          checkedCount={checkedCount}
+          remaining={review?.issues.filter((issue) => issue.status === 'open').length ?? 0}
+        />
+      </div>
+      {stage === 'design' && (
+        <section className="panel draft-in-progress" aria-label="Survey draft in progress">
+          <div className="draft-section-heading">
+            <span>
+              <Sparkles size={13} /> DESIGN AGENT
+            </span>
+            <span className="drafting-status" role="status">
+              Drafting survey questions...
             </span>
           </div>
-          <ol className="workflow-steps">
-            {[
-              {
-                label: 'Design Agent',
-                description: 'Turns your objective into survey questions.',
-                state:
-                  stage === 'design'
-                    ? 'working'
-                    : stage === 'critic' || stage === 'ready'
-                      ? 'done'
-                      : 'waiting',
-                icon: Sparkles,
-              },
-              {
-                label: 'Methodology Critic',
-                description: 'Checks wording, bias, and question flow.',
-                state: stage === 'critic' ? 'working' : stage === 'ready' ? 'done' : 'waiting',
-                icon: CheckCheck,
-              },
-              {
-                label: 'Ready to edit',
-                description: 'Review suggestions and open the builder.',
-                state: stage === 'ready' ? 'done' : 'waiting',
-                icon: FileText,
-              },
-            ].map((step) => (
-              <li className="workflow-step" data-state={step.state} key={step.label}>
-                <span className="workflow-step-icon">
-                  {step.state === 'working' ? (
-                    <LoaderCircle size={17} className="animate-spin" />
-                  ) : step.state === 'done' ? (
-                    <Check size={17} />
-                  ) : (
-                    <step.icon size={17} />
-                  )}
-                </span>
+          <div className="draft-placeholder" aria-hidden="true">
+            {[0, 1, 2].map((index) => (
+              <div
+                className="draft-placeholder-question"
+                key={index}
+                style={{ animationDelay: `${index * 160}ms` }}
+              >
+                <span className="question-number">{String(index + 1).padStart(2, '0')}</span>
                 <div>
-                  <h3>{step.label}</h3>
-                  <p>{step.description}</p>
-                  <span className="workflow-step-state">
-                    {step.state === 'working'
-                      ? 'Working'
-                      : step.state === 'done'
-                        ? 'Complete'
-                        : 'Waiting'}
-                  </span>
+                  <span />
+                  <span />
+                  <span />
                 </div>
-              </li>
+              </div>
             ))}
-          </ol>
-        </aside>
-      </div>
+          </div>
+        </section>
+      )}
       {survey && (
-        <div className="studio-results grid items-start gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+        <div
+          key={survey.id}
+          className="studio-results grid items-start gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]"
+        >
           <section className="panel">
+            <div className="draft-section-heading">
+              <span>
+                <FileText size={13} /> SURVEY DRAFT
+              </span>
+              <Badge variant="accent">{survey.questions.length} questions</Badge>
+            </div>
             <h2 className="text-lg font-semibold">{survey.title}</h2>
             <p className="mt-2 text-[13px] leading-6 text-muted-foreground">{survey.description}</p>
-            <div className="mt-4 divide-y divide-border">
+            <div ref={questionList} className="draft-questions mt-4 divide-y divide-border">
               {survey.questions.map((q, index) => (
-                <article className="py-4" key={q.id}>
+                <article
+                  className="draft-question py-4"
+                  key={q.id}
+                  data-motion-key={q.id}
+                  data-reviewing={stage === 'critic' && index === checkedCount}
+                  data-checked={stage === 'critic' && index < checkedCount}
+                  data-refined={review?.issues.some(
+                    (issue) => issue.questionId === q.id && issue.status === 'applied',
+                  )}
+                  style={{ animationDelay: `${Math.min(index * 45, 270)}ms` }}
+                >
                   <div className="mb-2 flex items-center gap-2">
                     <span className="question-number">{String(index + 1).padStart(2, '0')}</span>
                     <Badge>{typeLabels[q.type]}</Badge>
+                    {stage === 'critic' && index === checkedCount && (
+                      <span className="question-review-state ml-auto">
+                        <LoaderCircle size={11} className="animate-spin" /> Reviewing
+                      </span>
+                    )}
+                    {stage === 'critic' && index < checkedCount && (
+                      <span className="question-review-state ml-auto">
+                        <ShieldCheck size={11} /> Checked
+                      </span>
+                    )}
                     {review?.issues.some(
                       (i) => i.questionId === q.id && i.status === 'applied',
                     ) && (
@@ -239,7 +260,9 @@ export default function StudioPage() {
                       </span>
                     )}
                   </div>
-                  <p className="text-sm font-medium leading-6">{q.title}</p>
+                  <p key={q.title} className="question-wording text-sm font-medium leading-6">
+                    {q.title}
+                  </p>
                   {'options' in q && (
                     <div className="mt-3 flex flex-wrap gap-1.5">
                       {q.options.map((option) => (
@@ -269,9 +292,7 @@ export default function StudioPage() {
               </Button>
             </div>
           ) : (
-            <div className="panel flex items-center gap-3 text-[13px] text-muted-foreground">
-              <LoaderCircle className="size-4 animate-spin" /> Reviewing questions…
-            </div>
+            <ReviewProgress checkedCount={checkedCount} questionCount={survey.questions.length} />
           )}
         </div>
       )}

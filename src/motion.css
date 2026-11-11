@@ -1,0 +1,668 @@
+/* Motion follows the work: short feedback, legible handoffs, settled results. */
+:root {
+  --ease-arrive: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-feedback: cubic-bezier(0.2, 0.65, 0.3, 1);
+}
+.page-arrival {
+  min-width: 0;
+  animation: page-arrive 360ms var(--ease-arrive) both;
+}
+.ui-button {
+  transition:
+    transform 160ms var(--ease-feedback),
+    box-shadow 200ms,
+    background-color 180ms,
+    color 180ms,
+    border-color 180ms;
+}
+.ui-button svg {
+  transition: transform 220ms var(--ease-arrive);
+}
+.ui-button:hover:not(:disabled) svg.lucide-arrow-right {
+  transform: translateX(2px);
+}
+.nav-item {
+  position: relative;
+  transition:
+    background 200ms,
+    color 200ms;
+}
+.nav-item.active::after {
+  content: '';
+  position: absolute;
+  left: -16px;
+  top: 13px;
+  bottom: 13px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: #bce5cc;
+  animation: indicator-arrive 250ms var(--ease-arrive) both;
+}
+.panel,
+.table-panel {
+  transition:
+    box-shadow 240ms,
+    border-color 240ms;
+}
+.metric-card {
+  transition: background 240ms;
+}
+.metric-card:hover {
+  background: #f8fbf6;
+}
+.metric-value {
+  animation: value-arrive 1050ms ease-in-out both;
+}
+.metric-card:nth-child(2) .metric-value {
+  animation-delay: 60ms;
+}
+.metric-card:nth-child(3) .metric-value {
+  animation-delay: 120ms;
+}
+.metric-card:nth-child(4) .metric-value {
+  animation-delay: 180ms;
+}
+.input {
+  transition:
+    border-color 180ms,
+    box-shadow 180ms,
+    background-color 180ms;
+}
+.objective-input:focus {
+  box-shadow: 0 0 0 4px #18776709;
+}
+.example-prompt {
+  transition:
+    transform 200ms var(--ease-arrive),
+    box-shadow 200ms,
+    background 180ms,
+    border-color 180ms;
+}
+.example-prompt > svg:last-child {
+  margin-left: auto;
+  transition: transform 220ms;
+}
+.example-prompt[aria-pressed='true'] {
+  box-shadow: inset 0 0 0 1px #9bbb9f;
+}
+
+/* The existing workflow sidebar is the orchestration view, with no extra stage or canvas. */
+.workflow-panel {
+  display: flex;
+  flex-direction: column;
+}
+.workflow-step-icon {
+  transition:
+    background 350ms,
+    color 350ms,
+    box-shadow 350ms,
+    border-color 350ms;
+}
+.workflow-step[data-state='working'] .workflow-step-icon {
+  animation: agent-breathe 1.8s ease-in-out infinite;
+}
+.workflow-step[data-state='done'] .workflow-step-icon svg {
+  animation: mark-arrive 300ms var(--ease-arrive) both;
+}
+.workflow-step-state {
+  min-height: 17px;
+}
+.workflow-step[data-state='done'] .workflow-step-state {
+  color: #447954;
+}
+.workflow-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 16px;
+  top: 41px;
+  bottom: 7px;
+  width: 1px;
+  background: #76a38b;
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform 500ms var(--ease-arrive);
+}
+.workflow-step[data-state='done']::after {
+  transform: scaleY(1);
+}
+.workflow-packet {
+  position: absolute;
+  z-index: 1;
+  left: 10px;
+  top: 40px;
+  display: grid;
+  place-items: center;
+  width: 13px;
+  height: 18px;
+  background: #f9fbf6;
+  color: #398469;
+  animation: packet-handoff 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+.workflow-progress {
+  display: flex;
+  gap: 5px;
+  margin-top: auto;
+  padding-top: 20px;
+}
+.workflow-progress > span {
+  flex: 1;
+  height: 3px;
+  border-radius: 3px;
+  background: #e1e8dc;
+  overflow: hidden;
+  position: relative;
+  transition: background 400ms;
+}
+.workflow-progress > span[data-complete='true'] {
+  background: #5d9d80;
+}
+.workflow-progress > span[data-working='true']::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, #5d9d80, transparent);
+  animation: process-travel 1.7s ease-in-out infinite;
+}
+
+/* The draft occupies its eventual workspace as it is created and checked. */
+.draft-in-progress {
+  max-width: 100%;
+  animation: copy-arrive 300ms var(--ease-arrive) both;
+}
+.draft-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.draft-section-heading > span:first-child {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #607965;
+  font-size: 10px;
+  font-weight: 550;
+  letter-spacing: 1px;
+}
+.drafting-status {
+  color: #637268;
+  font-size: 12px;
+}
+.draft-placeholder {
+  max-width: 640px;
+}
+.draft-placeholder-question {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 22px 0;
+  border-top: 1px solid #edf0e9;
+  animation: copy-arrive 450ms var(--ease-arrive) both;
+}
+.draft-placeholder-question > div {
+  display: grid;
+  flex: 1;
+  gap: 10px;
+  padding-block: 5px;
+}
+.draft-placeholder-question > div > span {
+  position: relative;
+  height: 7px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #eaf0e5;
+}
+.draft-placeholder-question > div > span:nth-child(2) {
+  width: 72%;
+}
+.draft-placeholder-question > div > span:nth-child(3) {
+  width: 40%;
+  margin-top: 4px;
+}
+.draft-placeholder-question > div > span::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, #cedfc7, transparent);
+  animation: process-travel 1.7s ease-in-out infinite;
+}
+.studio-results {
+  animation: copy-arrive 400ms var(--ease-arrive) both;
+}
+.draft-questions {
+  position: relative;
+}
+.draft-question {
+  position: relative;
+  animation: question-arrive 400ms var(--ease-arrive) both;
+}
+.draft-question::before {
+  content: '';
+  position: absolute;
+  inset: 7px -12px;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 8px;
+  background: #edf5e8;
+  opacity: 0;
+  transition: opacity 350ms;
+}
+.draft-question > * {
+  position: relative;
+}
+.draft-question[data-reviewing='true']::before {
+  opacity: 1;
+}
+.draft-question[data-reviewing='true'] .question-number {
+  border-color: #8bb595;
+  color: #297d62;
+  background: #e2eedb;
+}
+.draft-question[data-checked='true'] .question-number {
+  color: #387e59;
+  border-color: #c9ddc0;
+}
+.question-review-state {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #3e7b5c;
+  animation: copy-arrive 200ms var(--ease-arrive) both;
+}
+.draft-question[data-refined='true'] .question-number {
+  background: #e1efda;
+  border-color: #b5d1aa;
+  color: #386a42;
+  transition:
+    background 350ms,
+    border-color 350ms;
+}
+.question-wording {
+  animation: wording-arrive 380ms var(--ease-arrive) both;
+}
+.draft-question[data-refined='true']::before {
+  animation: refinement-feedback 1.4s ease-out both;
+}
+.draft-question[data-refined='true'] .question-wording {
+  color: #365a40;
+}
+
+.review-processing {
+  animation: copy-arrive 400ms var(--ease-arrive) both;
+}
+.review-processing-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.review-processing-heading h2 {
+  font-size: 13px;
+  font-weight: 550;
+}
+.review-processing-heading p {
+  margin-top: 4px;
+  color: #637268;
+  font-size: 11px;
+}
+.review-processing-heading > svg:last-child {
+  color: #60866b;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.review-count {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 28px;
+  font-variant-numeric: tabular-nums;
+}
+.review-count strong {
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: -1px;
+  color: #365a40;
+}
+.review-count > span {
+  color: #637268;
+  font-size: 12px;
+}
+.question-check-track {
+  display: flex;
+  gap: 5px;
+  margin-top: 12px;
+}
+.question-check-track > span {
+  position: relative;
+  flex: 1;
+  height: 5px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: #eaf0e5;
+  transition: background 300ms;
+}
+.question-check-track > span[data-checked='true'] {
+  background: #6c9c7a;
+}
+.question-check-track > span[data-current='true'] {
+  background: #c7ddbe;
+}
+.question-check-track > span[data-current='true']::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, #73a087, transparent);
+  animation: process-travel 800ms ease-in-out infinite;
+}
+.review-processing-note {
+  margin-top: 20px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: #637268;
+}
+
+/* Resolutions update immediately; their presentation collapses into the review history. */
+.review-panel {
+  animation: copy-arrive 400ms var(--ease-arrive) both;
+}
+.quality-score-value {
+  animation: score-reveal 1100ms var(--ease-arrive) both;
+}
+.review-resolution-track {
+  height: 3px;
+  background: #eaf0e5;
+  border-radius: 3px;
+  margin-top: -7px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+.review-resolution-track > span {
+  display: block;
+  height: 100%;
+  background: #649c78;
+  border-radius: inherit;
+  transition: width 500ms var(--ease-arrive);
+}
+.review-issue-slot {
+  display: grid;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition:
+    grid-template-rows 320ms var(--ease-arrive),
+    opacity 200ms,
+    display 320ms allow-discrete;
+}
+.review-issue-slot[data-resolved='true'] {
+  grid-template-rows: 0fr;
+  opacity: 0;
+  display: none;
+}
+.review-issue-clip {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.resolved-issue-space {
+  height: var(--exit-height, 0px);
+}
+.review-issue {
+  transition: background-color 220ms;
+}
+.studio-results .review-issue {
+  padding: 22px 0;
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  border-radius: 0;
+}
+.review-history-item {
+  animation: copy-arrive 350ms var(--ease-arrive) both;
+}
+.review-complete {
+  animation: copy-arrive 350ms var(--ease-arrive) both;
+}
+.review-complete svg {
+  animation: mark-arrive 400ms var(--ease-arrive) both;
+}
+
+/* Charts settle smoothly into their final values; interaction stays responsive. */
+.distribution-bar-track > div {
+  transform-origin: left;
+  animation: bar-reveal 1200ms var(--ease-arrive) both;
+  transition:
+    width 850ms var(--ease-arrive),
+    background 220ms;
+}
+.distribution-bars > div:nth-child(2) .distribution-bar-track > div {
+  animation-delay: 45ms;
+}
+.distribution-bars > div:nth-child(3) .distribution-bar-track > div {
+  animation-delay: 90ms;
+}
+.distribution-bars > div:nth-child(n + 4) .distribution-bar-track > div {
+  animation-delay: 135ms;
+}
+.distribution-bars > div:hover .distribution-bar-track > div {
+  background: #287e66;
+}
+.recharts-tooltip-wrapper {
+  transition: transform 100ms var(--ease-feedback) !important;
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .ui-button:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+  .ui-button.bg-primary:hover {
+    box-shadow: 0 4px 10px #18776720;
+  }
+  .example-prompt:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px #284f2f08;
+  }
+  .example-prompt:hover > svg:last-child {
+    transform: translateX(2px);
+  }
+}
+.ui-button:active:not(:disabled) {
+  transform: translateY(1px) scale(0.985);
+}
+@media (max-width: 1023px) {
+  .nav-item.active::after {
+    left: -10px;
+  }
+}
+@media (max-width: 639px) {
+  .nav-item.active::after {
+    left: -6px;
+  }
+  .workflow-step-state {
+    min-height: 34px;
+    font-size: 10px;
+    line-height: 1.6;
+  }
+  .workflow-step:not(:last-child)::after {
+    left: 44px;
+    right: -2px;
+    top: 16px;
+    bottom: auto;
+    width: auto;
+    height: 1px;
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+  .workflow-step[data-state='done']::after {
+    transform: scaleX(1);
+  }
+  .workflow-packet {
+    left: 43px;
+    top: 9px;
+    width: 18px;
+    height: 15px;
+    animation-name: packet-handoff-horizontal;
+  }
+  .draft-section-heading {
+    flex-wrap: wrap;
+  }
+  .question-review-state {
+    font-size: 10px;
+  }
+  .draft-question::before {
+    inset-inline: -8px;
+  }
+}
+@keyframes page-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes copy-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes value-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes wording-arrive {
+  from {
+    opacity: 0.4;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes indicator-arrive {
+  from {
+    transform: scaleY(0.3);
+    opacity: 0;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+@keyframes mark-arrive {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes agent-breathe {
+  0%,
+  100% {
+    box-shadow: 0 0 0 3px #6c997808;
+  }
+  50% {
+    box-shadow: 0 0 0 5px #6c997818;
+  }
+}
+@keyframes packet-handoff {
+  0% {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  20%,
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(35px);
+  }
+}
+@keyframes packet-handoff-horizontal {
+  0% {
+    opacity: 0;
+    transform: translateX(-5px);
+  }
+  20%,
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(25px);
+  }
+}
+@keyframes process-travel {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes question-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes refinement-feedback {
+  0%,
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes score-reveal {
+  from {
+    stroke-dasharray: 0 170;
+  }
+}
+@keyframes bar-reveal {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+  .workflow-packet {
+    display: none;
+  }
+  .draft-question[data-refined='true']::before {
+    opacity: 0;
+  }
+  .recharts-tooltip-wrapper {
+    transition: none !important;
+  }
+}
