@@ -3,6 +3,8 @@ import {
   BarChart3,
   CalendarDays,
   CheckCircle2,
+  Clock3,
+  Download,
   ClipboardList,
   MessageSquareText,
   Quote,
@@ -10,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import { useMemo } from 'react';
+import { toast } from 'sonner';
 import { useStore } from '@/app/store';
 import { SafeLink, useAppNavigation } from '@/app/navigation';
 import { Button } from '@/components/ui/button';
@@ -25,6 +28,8 @@ import { ActivityChart, DistributionChart } from '@/components/charts/ResearchCh
 import { analyticsFixture } from '@/data/analytics';
 import { typeLabels } from '@/lib/survey-utils';
 import { formatDate, number } from '@/lib/utils';
+import { formatDuration } from '@/lib/response-utils';
+import { downloadResponsesCsv } from '@/lib/csv';
 
 export default function AnalyticsPage() {
   const { id } = useParams();
@@ -63,11 +68,26 @@ export default function AnalyticsPage() {
       <PageHeading
         title="Analytics"
         action={
-          <Button asChild variant="outline">
-            <SafeLink to={`/builder/${survey.id}`}>
-              View questionnaire <ArrowUpRight />
-            </SafeLink>
-          </Button>
+          <>
+            <Button
+              variant="outline"
+              onClick={() => {
+                try {
+                  downloadResponsesCsv(survey, fixture.responses);
+                  toast.success('CSV exported');
+                } catch {
+                  toast.error('Could not export CSV. Please try again.');
+                }
+              }}
+            >
+              <Download /> Export CSV
+            </Button>
+            <Button asChild variant="outline">
+              <SafeLink to={`/builder/${survey.id}`}>
+                View questionnaire <ArrowUpRight />
+              </SafeLink>
+            </Button>
+          </>
         }
       />
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-white p-4">
@@ -115,10 +135,10 @@ export default function AnalyticsPage() {
             icon: ClipboardList,
           },
           {
-            title: 'Question types',
-            value: String(new Set(survey.questions.map((q) => q.type)).size).padStart(2, '0'),
-            detail: 'Answer formats',
-            icon: BarChart3,
+            title: 'Avg. completion time',
+            value: formatDuration(fixture.averageCompletionSeconds),
+            detail: 'Start to submission',
+            icon: Clock3,
           },
         ].map(({ title, value, detail, icon: Icon }) => (
           <div className="metric-card" key={title}>
@@ -163,6 +183,33 @@ export default function AnalyticsPage() {
                   <span className="text-xs text-muted-foreground">/ 5 average rating</span>
                 </div>
               )}
+              {data.nps && (
+                <div className="mb-4">
+                  <div className="flex items-baseline gap-2">
+                    <strong className="text-3xl font-semibold tracking-tight">
+                      {data.nps.score === null
+                        ? '—'
+                        : data.nps.score > 0
+                          ? `+${data.nps.score}`
+                          : data.nps.score}
+                    </strong>
+                    <span className="text-xs text-muted-foreground">NPS</span>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-muted-foreground">
+                    {(
+                      [
+                        ['Promoters', data.nps.promoters],
+                        ['Passives', data.nps.passives],
+                        ['Detractors', data.nps.detractors],
+                      ] as const
+                    ).map(([label, count]) => (
+                      <span key={label}>
+                        {label} {data.nps!.total ? Math.round((count / data.nps!.total) * 100) : 0}%
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
               {q.type === 'text' ? (
                 <div className="mt-4 grid gap-3 lg:grid-cols-3">
                   {data.texts.map((text) => (
@@ -178,7 +225,10 @@ export default function AnalyticsPage() {
                 </div>
               ) : (
                 <>
-                  <DistributionChart data={data.distribution} rating={q.type === 'rating'} />
+                  <DistributionChart
+                    data={data.distribution}
+                    rating={q.type === 'rating' || q.type === 'nps'}
+                  />
                   <p className="mt-2 text-[10px] text-slate-400">
                     {q.type === 'multiple_choice'
                       ? 'Multiple selections allowed · Totals can exceed sample respondent count.'

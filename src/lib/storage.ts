@@ -43,6 +43,7 @@ export function isDemoState(value: unknown): value is DemoState {
           Number.isInteger(q.order) &&
           ((q.type === 'text' && typeof q.multiline === 'boolean') ||
             (q.type === 'rating' && q.min === 1 && q.max === 5) ||
+            (q.type === 'nps' && q.min === 0 && q.max === 10) ||
             (['single_choice', 'multiple_choice'].includes(q.type as string) &&
               strings(q.options))),
       ),
@@ -53,6 +54,7 @@ export function isDemoState(value: unknown): value is DemoState {
       typeof r.id === 'string' &&
       typeof r.surveyId === 'string' &&
       date(r.submittedAt) &&
+      (r.startedAt === undefined || date(r.startedAt)) &&
       record(r.answers) &&
       Object.values(r.answers).every(
         (a) => typeof a === 'string' || (typeof a === 'number' && Number.isFinite(a)) || strings(a),
@@ -77,8 +79,10 @@ export function isDemoState(value: unknown): value is DemoState {
           typeof i.explanation === 'string' &&
           typeof i.suggestion === 'string' &&
           record(i.patch) &&
-          typeof i.patch.title === 'string' &&
-          (i.patch.description === undefined || typeof i.patch.description === 'string'),
+          ((i.patch.kind === 'move' && ['first', 'last'].includes(i.patch.position as string)) ||
+            ((i.patch.kind === undefined || i.patch.kind === 'wording') &&
+              typeof i.patch.title === 'string' &&
+              (i.patch.description === undefined || typeof i.patch.description === 'string'))),
       ),
   );
   return surveysValid && responsesValid && reviewsValid;

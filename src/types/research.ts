@@ -1,4 +1,4 @@
-export type QuestionType = 'single_choice' | 'multiple_choice' | 'text' | 'rating';
+export type QuestionType = 'single_choice' | 'multiple_choice' | 'text' | 'rating' | 'nps';
 type QuestionBase = {
   id: string;
   title: string;
@@ -11,6 +11,7 @@ export type Question = QuestionBase &
     | { type: 'single_choice' | 'multiple_choice'; options: string[] }
     | { type: 'text'; multiline: boolean }
     | { type: 'rating'; min: 1; max: 5 }
+    | { type: 'nps'; min: 0; max: 10 }
   );
 export type Survey = {
   id: string;
@@ -31,9 +32,12 @@ export type SurveyResponse = {
   id: string;
   surveyId: string;
   answers: Record<string, Answer>;
+  startedAt?: string;
   submittedAt: string;
 };
-export type QuestionPatch = { title: string; description?: string };
+export type QuestionPatch =
+  | { kind?: 'wording'; title: string; description?: string }
+  | { kind: 'move'; position: 'first' | 'last' };
 export type ReviewIssue = {
   id: string;
   questionId: string;

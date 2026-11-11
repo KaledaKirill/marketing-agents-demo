@@ -42,6 +42,10 @@ npm run format
 - **Sharing:** custom survey links only work in the browser where they were created. Preloaded demo links work for all visitors at `/#/survey/demo-ev-satisfaction` and `/#/survey/demo-smartphone-purchasing` (after any hosting subpath).
 - **Published studies are immutable:** editing makes a separate draft copy with new question identifiers and no responses. Publishing that copy creates a new link.
 - **Preview:** runs the shared respondent renderer against the editor buffer and never stores responses.
+- **NPS:** all five question types are supported, including an integer scale from 0 to 10. Analytics show the score (% promoters at 9–10 minus % detractors at 0–6), the three respondent groups, and the full distribution.
+- **Completion time:** the runner saves the time of the first Start survey click and the submission timestamp. Analytics show average elapsed completion time from their deterministic fixture responses. Older responses without a start timestamp remain readable and are excluded from time calculations.
+- **CSV:** Export CSV downloads one row per response with timestamps, elapsed seconds, and answers in questionnaire order. It exports the same fixed response dataset that powers the selected analytics view, independently of locally submitted responses. Files use UTF-8 with a BOM, quoted fields, JSON arrays for multiselect answers, and spreadsheet-formula protection for text.
+- **Critic order suggestions:** generated EV, smartphone, and general studies include an open question early in the draft; the critic can move it to the end. The brand example suggests moving familiarity to the beginning. Apply Fix updates the actual sequence and preserves question IDs. Manual reordering supersedes outstanding flow suggestions.
 - **Local response counts:** the original EV and smartphone studies include 48 and 32 example response records. New submissions add to these operational counts, independently of dashboard fixtures.
 
 Optional P1 items are intentionally excluded: dark mode, drag-and-drop ordering, additional topics, and elaborate animation. Accessible up/down controls provide question ordering.

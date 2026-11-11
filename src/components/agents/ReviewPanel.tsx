@@ -75,9 +75,13 @@ export function ReviewPanel({
               <p className="mt-2 text-xs leading-6 text-muted-foreground">{issue.explanation}</p>
               <div className="my-3 rounded-lg bg-slate-50 p-3">
                 <p className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold text-violet-600">
-                  Suggested wording
+                  {issue.patch.kind === 'move' ? 'Suggested order' : 'Suggested wording'}
                 </p>
-                <p className="text-xs leading-6 text-slate-600">{issue.patch.title}</p>
+                <p className="text-xs leading-6 text-slate-600">
+                  {issue.patch.kind === 'move'
+                    ? `Move question ${index + 1} to ${issue.patch.position === 'first' ? 'the beginning' : 'the end'}.`
+                    : issue.patch.title}
+                </p>
                 <p className="mt-1 text-[10px] leading-5 text-slate-400">{issue.suggestion}</p>
               </div>
               {!readOnly && (

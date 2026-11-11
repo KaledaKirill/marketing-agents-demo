@@ -51,28 +51,43 @@ export function QuestionInput({
         </p>
       </div>
     );
-  if (question.type === 'rating')
+  if (question.type === 'rating' || question.type === 'nps')
     return (
       <fieldset aria-invalid={invalid}>
         <legend className="sr-only">{question.title}</legend>
-        <div className="grid grid-cols-5 gap-2.5">
-          {[1, 2, 3, 4, 5].map((value) => (
-            <label key={value} className={cn('rating-choice', answer === value && 'selected')}>
-              <input
-                type="radio"
-                name={id}
-                value={value}
-                checked={answer === value}
-                onChange={() => onChange(value)}
-                className="rating-input"
-              />
-              <span>{value}</span>
-            </label>
-          ))}
+        <div
+          className={
+            question.type === 'nps'
+              ? 'grid grid-cols-6 gap-2 sm:grid-cols-[repeat(11,minmax(0,1fr))]'
+              : 'grid grid-cols-5 gap-2.5'
+          }
+        >
+          {Array.from({ length: question.max - question.min + 1 }, (_, i) => question.min + i).map(
+            (value) => (
+              <label
+                key={value}
+                className={cn(
+                  'rating-choice',
+                  question.type === 'nps' && 'nps-choice',
+                  answer === value && 'selected',
+                )}
+              >
+                <input
+                  type="radio"
+                  name={id}
+                  value={value}
+                  checked={answer === value}
+                  onChange={() => onChange(value)}
+                  className="rating-input"
+                />
+                <span>{value}</span>
+              </label>
+            ),
+          )}
         </div>
         <div className="mt-3 flex justify-between text-xs text-muted-foreground">
-          <span>Low</span>
-          <span>High</span>
+          <span>{question.type === 'nps' ? 'Not at all likely' : 'Low'}</span>
+          <span>{question.type === 'nps' ? 'Extremely likely' : 'High'}</span>
         </div>
       </fieldset>
     );
@@ -125,6 +140,7 @@ export function SurveyRunner({
   const [done, setDone] = useState(false);
   const attempt = useRef(uid());
   const submitted = useRef(false);
+  const startedAt = useRef<string | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const confirm = useConfirm();
   const question = survey.questions[index];
@@ -165,6 +181,7 @@ export function SurveyRunner({
         <Button
           size="lg"
           onClick={() => {
+            startedAt.current ??= new Date().toISOString();
             setStarted(true);
             focusHeading();
           }}
@@ -206,6 +223,7 @@ export function SurveyRunner({
         id: attempt.current,
         surveyId: survey.id,
         answers,
+        startedAt: startedAt.current ?? undefined,
         submittedAt: new Date().toISOString(),
       });
     setDone(true);

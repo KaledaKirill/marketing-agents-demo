@@ -164,6 +164,14 @@ export function newQuestion(
 ): Question {
   const base = { id: uid(), title, description: '', required: true, order };
   if (type === 'rating') return { ...base, type, min: 1, max: 5 };
+  if (type === 'nps')
+    return {
+      ...base,
+      type,
+      min: 0,
+      max: 10,
+      description: '0 = Not at all likely; 10 = Extremely likely.',
+    };
   if (type === 'text') return { ...base, type, multiline: true };
   return { ...base, type, options: ['Option 1', 'Option 2'] };
 }
@@ -209,8 +217,24 @@ export function generateSurvey(objective: string): Survey {
             ? '1 = Very unreliable; 5 = Very reliable.'
             : '1 = Very dissatisfied; 5 = Very satisfied.',
     },
-    { ...newQuestion('text', 5, content.last), type: 'text', multiline: true, required: false },
+    {
+      ...newQuestion(
+        'nps',
+        5,
+        topic === 'ev'
+          ? 'How likely are you to recommend your electric vehicle to a friend or colleague?'
+          : topic === 'smartphone'
+            ? 'How likely are you to recommend your current smartphone brand to a friend or colleague?'
+            : topic === 'brand'
+              ? 'How likely are you to recommend Northline to a friend or colleague?'
+              : 'How likely are you to recommend this product to a friend or colleague?',
+      ),
+      description: '0 = Not at all likely; 10 = Extremely likely.',
+      required: topic !== 'brand',
+    },
+    { ...newQuestion('text', 6, content.last), type: 'text', multiline: true, required: false },
   ];
+  if (topic !== 'brand') questions.splice(1, 0, questions.pop()!);
   const now = new Date().toISOString();
   return {
     id: uid(),
@@ -220,7 +244,7 @@ export function generateSurvey(objective: string): Survey {
     objective: objective.trim(),
     topic,
     status: 'draft',
-    questions,
+    questions: questions.map((q, order) => ({ ...q, order })),
     createdAt: now,
     updatedAt: now,
   };
@@ -253,6 +277,29 @@ export function reviewSurvey(survey: Survey): AIReview {
         patch: { title: content.frequencyFix },
       });
   }
+  const target =
+    survey.topic === 'brand'
+      ? survey.questions.find((q) => q.title === content.fourth)
+      : survey.questions.find((q) => q.type === 'text' && q.title === content.last);
+  const targetIndex = survey.questions.findIndex((q) => q.id === target?.id);
+  const position = survey.topic === 'brand' ? 'first' : 'last';
+  if (target && targetIndex !== (position === 'first' ? 0 : survey.questions.length - 1))
+    issues.push({
+      id: uid(),
+      questionId: target.id,
+      type: 'flow',
+      severity: 'minor',
+      status: 'open',
+      explanation:
+        position === 'first'
+          ? 'Respondents are asked to rate Northline before establishing how familiar they are with it. Start with familiarity to give the later ratings context.'
+          : 'The open-ended question comes before the shorter choice questions. Moving it to the end lets respondents work through the structured section before composing a written answer.',
+      suggestion:
+        position === 'first'
+          ? 'Move the familiarity question to the beginning.'
+          : 'Move the open-ended question to the end.',
+      patch: { kind: 'move', position },
+    });
   return {
     surveyId: survey.id,
     score: Math.max(60, 96 - issues.length * 9),
@@ -263,11 +310,26 @@ export function reviewSurvey(survey: Survey): AIReview {
 
 export function applyReviewSuggestion(survey: Survey, issue: ReviewIssue): Survey {
   if (survey.status === 'published' || issue.status !== 'open') return survey;
+  if (issue.patch.kind === 'move') {
+    const question = survey.questions.find((q) => q.id === issue.questionId);
+    if (!question) return survey;
+    const remaining = survey.questions.filter((q) => q.id !== question.id);
+    const questions =
+      issue.patch.position === 'first' ? [question, ...remaining] : [...remaining, question];
+    return {
+      ...survey,
+      updatedAt: new Date().toISOString(),
+      questions: questions.map((q, order) => ({ ...q, order })),
+    };
+  }
+  const patch = issue.patch;
   return {
     ...survey,
     updatedAt: new Date().toISOString(),
     questions: survey.questions.map((q) =>
-      q.id === issue.questionId ? { ...q, ...issue.patch } : q,
+      q.id === issue.questionId
+        ? { ...q, title: patch.title, description: patch.description ?? q.description }
+        : q,
     ),
   };
 }

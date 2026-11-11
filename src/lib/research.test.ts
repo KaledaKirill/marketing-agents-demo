@@ -16,6 +16,7 @@ import {
   publishSurvey,
   reorderQuestions,
   supersedeIssues,
+  supersedeFlowIssues,
   validateAnswer,
   validateSurvey,
 } from './survey-utils';
@@ -32,14 +33,15 @@ describe('topic-based mock agents', () => {
     expect(detectTopic(objective)).toBe(topic);
     expect(survey.topic).toBe(topic);
     expect(survey.objective).toBe(objective);
-    expect(survey.questions).toHaveLength(6);
-    expect(new Set(survey.questions.map((q) => q.type)).size).toBe(4);
+    expect(survey.questions).toHaveLength(7);
+    expect(new Set(survey.questions.map((q) => q.type)).size).toBe(5);
     expect(validateSurvey(survey)).toEqual([]);
-    expect(reviewSurvey(survey).issues).toHaveLength(2);
+    expect(reviewSurvey(survey).issues).toHaveLength(3);
   });
   it('applies concrete fixes only to the intended question', () => {
     const survey = generateSurvey('EV customer satisfaction');
     const issue = reviewSurvey(survey).issues[0];
+    if (issue.patch.kind === 'move') throw new Error('Expected wording suggestion');
     const next = applyReviewSuggestion(survey, issue);
     expect(next.questions[0].title).toBe(issue.patch.title);
     expect(issue.type).toBe('clarity');
@@ -109,7 +111,7 @@ describe('question editing and publication', () => {
     const questions = generateSurvey('EV customer satisfaction').questions;
     const result = reorderQuestions(questions, 0, 1);
     expect(result[1].id).toBe(questions[0].id);
-    expect(result.map((q) => q.order)).toEqual([0, 1, 2, 3, 4, 5]);
+    expect(result.map((q) => q.order)).toEqual([0, 1, 2, 3, 4, 5, 6]);
     expect(reorderQuestions(questions, 0, -1)).toEqual(questions);
   });
   it('rejects empty studies, empty wording, duplicate and empty options', () => {
@@ -157,14 +159,20 @@ describe('respondent validation', () => {
     expect(validateAnswer(survey.questions[0], 5)).toBe(true);
     expect(validateAnswer(survey.questions[0], 6)).toBe(false);
     expect(validateAnswer(survey.questions[0], 1.5)).toBe(false);
-    expect(validateAnswer(survey.questions[1], 'Unknown')).toBe(false);
-    const multi = survey.questions[2];
+    expect(
+      validateAnswer(
+        survey.questions.find((q) => q.type === 'single_choice')!,
+        'Unknown',
+      ),
+    ).toBe(false);
+    const multi = survey.questions.find((q) => q.type === 'multiple_choice')!;
     if (multi.type !== 'multiple_choice') throw new Error('Expected multiple choice');
     expect(validateAnswer(multi, [])).toBe(false);
     expect(validateAnswer(multi, [multi.options[0]])).toBe(true);
     expect(validateAnswer(multi, [multi.options[0], multi.options[0]])).toBe(false);
-    expect(validateAnswer(survey.questions[5], undefined)).toBe(true);
-    expect(validateAnswer({ ...survey.questions[5], required: true }, '   ')).toBe(false);
+    const text = survey.questions.find((q) => q.type === 'text')!;
+    expect(validateAnswer(text, undefined)).toBe(true);
+    expect(validateAnswer({ ...text, required: true }, '   ')).toBe(false);
   });
 });
 
@@ -236,8 +244,43 @@ describe('local state and fixed analytics', () => {
     expect(fixture.questions[0].distribution.reduce((sum, item) => sum + item.value, 0)).toBe(
       fixture.total,
     );
-    expect(fixture.questions[1].distribution.map((item) => item.name)).toEqual(
-      'options' in survey.questions[1] ? survey.questions[1].options : [],
-    );
+    const choice = survey.questions.find((q) => q.type === 'single_choice')!;
+    expect(
+      fixture.questions
+        .find((q) => q.questionId === choice.id)!
+        .distribution.map((item) => item.name),
+    ).toEqual('options' in choice ? choice.options : []);
   });
+});
+
+describe('question order suggestions', () => {
+  it.each(['EV ownership', 'Smartphone purchasing', 'Brand awareness'])(
+    'applies a flow fix for %s without changing questions or IDs',
+    (objective) => {
+      const survey = generateSurvey(objective);
+      const review = reviewSurvey(survey);
+      const issue = review.issues.find((i) => i.type === 'flow')!;
+      expect(issue.patch.kind).toBe('move');
+      const next = applyReviewSuggestion(survey, issue);
+      expect(next.questions.map((q) => q.order)).toEqual([0, 1, 2, 3, 4, 5, 6]);
+      expect(new Set(next.questions.map((q) => q.id))).toEqual(
+        new Set(survey.questions.map((q) => q.id)),
+      );
+      expect(next.questions.map((q) => q.title).sort()).toEqual(
+        survey.questions.map((q) => q.title).sort(),
+      );
+      expect(reviewSurvey(next).issues.some((i) => i.type === 'flow')).toBe(false);
+      expect(survey.questions.map((q) => q.id)).not.toEqual(next.questions.map((q) => q.id));
+      if (issue.patch.kind === 'move')
+        expect(
+          next.questions[issue.patch.position === 'first' ? 0 : next.questions.length - 1].id,
+        ).toBe(issue.questionId);
+      expect(applyReviewSuggestion(survey, { ...issue, status: 'dismissed' })).toBe(survey);
+      const superseded = supersedeFlowIssues(review)!;
+      expect(superseded.issues.find((i) => i.type === 'flow')!.status).toBe('superseded');
+      expect(
+        superseded.issues.filter((i) => i.type !== 'flow').every((i) => i.status === 'open'),
+      ).toBe(true);
+    },
+  );
 });

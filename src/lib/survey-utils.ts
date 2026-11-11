@@ -7,13 +7,17 @@ export const typeLabels: Record<QuestionType, string> = {
   multiple_choice: 'Multiple choice',
   text: 'Text response',
   rating: 'Rating scale',
+  nps: 'NPS (0–10)',
 };
 export function changeQuestionType(question: Question, type: QuestionType): Question {
   const changed = newQuestion(type, question.order, question.title);
   const base = {
     ...changed,
     id: question.id,
-    description: question.description,
+    description:
+      !question.description || /^(?:0|1) = .+; (?:5|10) = .+\.$/.test(question.description)
+        ? changed.description
+        : question.description,
     required: question.required,
   };
   if ((base.type === 'single_choice' || base.type === 'multiple_choice') && 'options' in question)
@@ -39,8 +43,13 @@ export function validateSurvey(survey: Survey): string[] {
 export function validateAnswer(question: Question, answer?: Answer): boolean {
   if (answer === undefined || answer === '' || (Array.isArray(answer) && answer.length === 0))
     return !question.required;
-  if (question.type === 'rating')
-    return typeof answer === 'number' && Number.isInteger(answer) && answer >= 1 && answer <= 5;
+  if (question.type === 'rating' || question.type === 'nps')
+    return (
+      typeof answer === 'number' &&
+      Number.isInteger(answer) &&
+      answer >= question.min &&
+      answer <= question.max
+    );
   if (question.type === 'text')
     return typeof answer === 'string' && (!!answer.trim() || !question.required);
   if (question.type === 'single_choice')
@@ -104,6 +113,16 @@ export function supersedeIssues(
       issue.questionId === questionId && issue.status === 'open'
         ? { ...issue, status: 'superseded' }
         : issue,
+    ),
+  };
+}
+
+export function supersedeFlowIssues(review: AIReview | undefined): AIReview | undefined {
+  if (!review) return undefined;
+  return {
+    ...review,
+    issues: review.issues.map((issue) =>
+      issue.type === 'flow' && issue.status === 'open' ? { ...issue, status: 'superseded' } : issue,
     ),
   };
 }

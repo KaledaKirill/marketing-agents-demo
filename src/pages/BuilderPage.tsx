@@ -40,6 +40,7 @@ import {
   publishSurvey,
   reorderQuestions,
   supersedeIssues,
+  supersedeFlowIssues,
   typeLabels,
   validateSurvey,
 } from '@/lib/survey-utils';
@@ -50,6 +51,7 @@ const questionIcons = {
   multiple_choice: ListChecks,
   text: Type,
   rating: Star,
+  nps: BarChart3,
 };
 const questionTypes = Object.keys(typeLabels) as QuestionType[];
 export default function BuilderPage() {
@@ -98,6 +100,10 @@ function BuilderEditor({ source, initialReview }: { source: Survey; initialRevie
     setBuffer({ ...buffer, questions: [...buffer.questions, question] });
     setSelectedId(question.id);
     setErrors([]);
+  }
+  function moveQuestion(index: number, direction: -1 | 1) {
+    setBuffer({ ...buffer, questions: reorderQuestions(buffer.questions, index, direction) });
+    setReview(supersedeFlowIssues(review));
   }
   async function remove(question: Question) {
     if (
@@ -344,12 +350,7 @@ function BuilderEditor({ source, initialReview }: { source: Survey; initialRevie
                         className="reorder-button"
                         aria-label={`Move question ${index + 1} up`}
                         disabled={index === 0}
-                        onClick={() =>
-                          setBuffer({
-                            ...buffer,
-                            questions: reorderQuestions(buffer.questions, index, -1),
-                          })
-                        }
+                        onClick={() => moveQuestion(index, -1)}
                       >
                         <ArrowUp size={12} />
                       </button>
@@ -357,12 +358,7 @@ function BuilderEditor({ source, initialReview }: { source: Survey; initialRevie
                         className="reorder-button"
                         aria-label={`Move question ${index + 1} down`}
                         disabled={index === buffer.questions.length - 1}
-                        onClick={() =>
-                          setBuffer({
-                            ...buffer,
-                            questions: reorderQuestions(buffer.questions, index, 1),
-                          })
-                        }
+                        onClick={() => moveQuestion(index, 1)}
                       >
                         <ArrowDown size={12} />
                       </button>
@@ -533,13 +529,18 @@ function BuilderEditor({ source, initialReview }: { source: Survey; initialRevie
                   )}
                 </div>
               )}
-              {selected.type === 'rating' && (
+              {(selected.type === 'rating' || selected.type === 'nps') && (
                 <div className="rounded-xl border border-dashed border-border bg-slate-50/50 p-5">
                   <p className="mb-4 text-xs text-muted-foreground">
-                    Respondents choose a rating from 1 to 5.
+                    {selected.type === 'nps'
+                      ? 'Recommendation score from 0 (not at all likely) to 10 (extremely likely).'
+                      : 'Respondents choose a rating from 1 to 5.'}
                   </p>
-                  <div className="flex gap-2">
-                    {[1, 2, 3, 4, 5].map((n) => (
+                  <div className="flex flex-wrap gap-2">
+                    {Array.from(
+                      { length: selected.max - selected.min + 1 },
+                      (_, i) => selected.min + i,
+                    ).map((n) => (
                       <span
                         key={n}
                         className="flex size-10 items-center justify-center rounded-lg border border-border bg-white text-sm text-slate-500"

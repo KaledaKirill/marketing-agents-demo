@@ -552,6 +552,10 @@
     background: #faf8ff;
     border-color: #c3b4f2;
   }
+  .nps-choice {
+    min-height: 44px;
+    font-size: 14px;
+  }
   .rating-choice.selected {
     border-color: #aa94e9;
     background: #f0eafa;

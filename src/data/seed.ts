@@ -1,5 +1,5 @@
-import type { DemoState, SurveyResponse } from '@/types/research';
-import { responseComments } from './response-comments';
+import type { DemoState } from '@/types/research';
+import { createFixtureResponses } from './fixture-responses';
 import {
   applyReviewSuggestion,
   examplePrompts,
@@ -56,24 +56,8 @@ export function createSeed(): DemoState {
     }
     return survey;
   });
-  const responses: SurveyResponse[] = surveys.flatMap((survey, i) =>
-    Array.from({ length: definitions[i].count }, (_, n) => ({
-      id: `${survey.id}-response-${n + 1}`,
-      surveyId: survey.id,
-      submittedAt: new Date(Date.UTC(2026, 10, 1 + (n % 9), 9 + (n % 8))).toISOString(),
-      answers: Object.fromEntries(
-        survey.questions.map((q, questionIndex) => [
-          q.id,
-          q.type === 'rating'
-            ? [4, 3, 5, 4, 2, 4, 5, 3, 4, 1][(n * 3 + questionIndex) % 10]
-            : q.type === 'text'
-              ? responseComments[survey.topic][n % responseComments[survey.topic].length]
-              : q.type === 'multiple_choice'
-                ? [q.options[n % q.options.length], q.options[(n + 1) % q.options.length]]
-                : q.options[n % q.options.length],
-        ]),
-      ),
-    })),
+  const responses = surveys.flatMap((survey, i) =>
+    createFixtureResponses(survey, definitions[i].count),
   );
   return {
     version: 1,

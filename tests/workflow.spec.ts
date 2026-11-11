@@ -31,6 +31,11 @@ test('complete research journey persists locally and keeps mock analytics fixed'
       exact: true,
     }),
   ).toBeVisible();
+  await page
+    .getByRole('article')
+    .filter({ has: page.getByText('flow', { exact: true }) })
+    .getByRole('button', { name: 'Apply Fix', exact: true })
+    .click();
   await page.getByRole('button', { name: 'Continue to Survey Builder' }).click();
   await page.getByLabel('Survey title').fill('EV Journey Research');
   await page.getByLabel('Question wording').fill('Overall, how satisfied are you with your EV?');
@@ -57,6 +62,10 @@ test('complete research journey persists locally and keeps mock analytics fixed'
   await page.getByRole('button', { name: 'Close dialog', exact: true }).click();
   await page.getByRole('link', { name: 'View analytics' }).click();
   const metric = await page.locator('.metric-card').first().textContent();
+  await expect(page.getByText('Avg. completion time', { exact: true })).toBeVisible();
+  const downloadEvent = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export CSV', exact: true }).click();
+  expect((await downloadEvent).suggestedFilename()).toBe('ev-journey-research-responses.csv');
 
   const runner = await context.newPage();
   const runnerErrors: string[] = [];
@@ -76,6 +85,8 @@ test('complete research journey persists locally and keeps mock analytics fixed'
   await runner.getByRole('radio', { name: 'At home', exact: true }).check();
   await runner.getByRole('button', { name: 'Next question' }).click();
   await runner.getByRole('radio', { name: '4', exact: true }).check();
+  await runner.getByRole('button', { name: 'Next question' }).click();
+  await runner.getByRole('radio', { name: '0', exact: true }).check();
   await runner.getByRole('button', { name: 'Next question' }).click();
   await runner.getByRole('textbox').fill('More reliable chargers near home.');
   await runner.getByRole('button', { name: 'Submit response', exact: true }).click();
@@ -149,7 +160,7 @@ test('published editing creates a draft copy and draft editing supports all ques
     required: false,
     options: ['Range', 'Charging', 'Price'],
   });
-  expect(draft.questions).toHaveLength(6);
+  expect(draft.questions).toHaveLength(7);
 });
 
 test('storage recovery preserves damaged data until an explicit reset', async ({ page }) => {

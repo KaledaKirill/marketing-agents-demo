@@ -1,24 +1,6 @@
 import type { Survey } from '@/types/research';
-import { responseComments } from './response-comments';
-
-const ratingProfiles: Record<Survey['topic'], [number[], number[]]> = {
-  ev: [
-    [6, 12, 22, 36, 24],
-    [13, 21, 25, 28, 13],
-  ],
-  smartphone: [
-    [9, 18, 27, 30, 16],
-    [4, 9, 18, 42, 27],
-  ],
-  brand: [
-    [9, 18, 37, 25, 11],
-    [16, 23, 31, 22, 8],
-  ],
-  general: [
-    [7, 14, 26, 34, 19],
-    [11, 15, 23, 31, 20],
-  ],
-};
+import { averageCompletionSeconds, calculateNps } from '@/lib/response-utils';
+import { createFixtureResponses, hash } from './fixture-responses';
 
 export const overviewFixture = {
   totalSurveys: 3,
@@ -43,9 +25,7 @@ export const activityFixture = [
   { date: 'Nov 8', responses: 128 },
   { date: 'Nov 10', responses: 116 },
 ];
-function hash(value: string) {
-  return [...value].reduce((n, c) => (n * 31 + c.charCodeAt(0)) >>> 0, 17);
-}
+
 export function analyticsFixture(survey: Survey) {
   const seed = hash(`${survey.topic}:${survey.title}`);
   const total =
@@ -54,46 +34,49 @@ export function analyticsFixture(survey: Survey) {
       : survey.id === 'smartphone-purchasing'
         ? 424
         : 120 + (seed % 180);
+  const responses = createFixtureResponses(survey, total);
   return {
     total,
+    responses,
     completionRate: 84 + (seed % 60) / 10,
-    activity: activityFixture.map((p) => ({
-      ...p,
-      responses: Math.round((p.responses * total) / 1248),
+    averageCompletionSeconds: averageCompletionSeconds(responses),
+    activity: activityFixture.map((point, index) => ({
+      ...point,
+      responses: responses.filter(
+        (r) =>
+          r.submittedAt.slice(0, 10) ===
+          new Date(Date.UTC(2026, 9, 13 + index * 2)).toISOString().slice(0, 10),
+      ).length,
     })),
-    questions: survey.questions.map((q, index) => {
-      const local = hash(q.title);
+    questions: survey.questions.map((question) => {
+      const answers = responses.map((r) => r.answers[question.id]);
       const options =
-        q.type === 'rating' ? ['1', '2', '3', '4', '5'] : 'options' in q ? q.options : [];
-      const weights = options.map((_, i) =>
-        q.type === 'rating'
-          ? ratingProfiles[survey.topic][q.order === 0 ? 0 : 1][i]
-          : 15 + ((local + i * 29) % 65),
-      );
-      const sum = weights.reduce((a, b) => a + b, 0);
-      const distribution = options.map((name, i) => ({
-        name,
-        value: Math.round((total * weights[i]) / sum),
-      }));
-      if (distribution.length && q.type !== 'multiple_choice')
-        distribution[distribution.length - 1].value +=
-          total - distribution.reduce((a, b) => a + b.value, 0);
-      if (q.type === 'multiple_choice')
-        distribution.forEach((item) => {
-          item.value = Math.min(total, Math.round(item.value * 2.1));
-        });
+        question.type === 'rating'
+          ? [1, 2, 3, 4, 5]
+          : question.type === 'nps'
+            ? Array.from({ length: 11 }, (_, i) => i)
+            : 'options' in question
+              ? question.options
+              : [];
+      const numbers = answers.filter((answer): answer is number => typeof answer === 'number');
       return {
-        questionId: q.id,
-        distribution,
+        questionId: question.id,
+        distribution: options.map((option) => ({
+          name: String(option),
+          value: answers.filter((answer) =>
+            Array.isArray(answer) ? answer.includes(String(option)) : answer === option,
+          ).length,
+        })),
         average:
-          q.type === 'rating'
-            ? distribution.reduce((a, b, i) => a + b.value * (i + 1), 0) / total
+          question.type === 'rating' && numbers.length
+            ? numbers.reduce((sum, n) => sum + n, 0) / numbers.length
             : null,
+        nps: question.type === 'nps' ? calculateNps(numbers) : null,
         texts:
-          q.type === 'text'
-            ? responseComments[survey.topic].slice(0, 3).map((text, i) => ({
-                text,
-                respondent: `Participant ${String(index * 10 + i + 1).padStart(3, '0')}`,
+          question.type === 'text'
+            ? responses.slice(0, 3).map((r, i) => ({
+                text: String(r.answers[question.id] ?? ''),
+                respondent: `Participant ${String(i + 1).padStart(3, '0')}`,
               }))
             : [],
       };
