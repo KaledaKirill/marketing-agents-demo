@@ -425,6 +425,60 @@
   animation: mark-arrive 400ms var(--ease-arrive) both;
 }
 
+/* Lift the question while its neighbours make room for the new order. */
+.question-sortable-list[data-dragging='true'] {
+  scroll-snap-type: none;
+}
+.sortable-question {
+  position: relative;
+  align-items: stretch;
+}
+.question-drag-handle {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  min-height: 44px;
+  align-self: stretch;
+  border-radius: 5px;
+  color: #80967f;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  transition:
+    color 180ms,
+    background 180ms;
+}
+.question-drag-handle:hover,
+.question-drag-handle:focus-visible {
+  color: #315f42;
+  background: #dfead7;
+}
+.question-drag-handle:active {
+  cursor: grabbing;
+}
+.question-list-item.is-dragging {
+  opacity: 0.3;
+  border: 1px dashed #8cad85;
+  background: #edf4e7;
+}
+.question-drag-overlay {
+  color: #315c3a;
+  background: #f5f9ef;
+  border: 1px solid #a3bf98;
+  box-shadow:
+    0 12px 30px #254b2926,
+    0 2px 6px #254b2912;
+  cursor: grabbing;
+}
+.question-drag-overlay .question-drag-handle {
+  color: #315f42;
+  cursor: grabbing;
+}
+.question-list-item.selected .question-position {
+  color: #386c43;
+}
 /* Charts settle smoothly into their final values; interaction stays responsive. */
 .distribution-bar-track > div {
   transform-origin: left;

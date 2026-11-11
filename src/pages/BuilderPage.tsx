@@ -1,26 +1,21 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import * as Dropdown from '@radix-ui/react-dropdown-menu';
 import {
   ArrowDown,
   ArrowLeft,
-  ArrowUp,
   BarChart3,
   ChevronDown,
-  CircleDot,
   CopyPlus,
   Eye,
   FileText,
   GripVertical,
   Link2,
-  ListChecks,
   LockKeyhole,
   Plus,
   Rocket,
   Save,
-  Star,
   Trash2,
-  Type,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { AIReview, Question, QuestionType, Survey } from '@/types/research';
@@ -33,12 +28,13 @@ import { useConfirm } from '@/components/ui/confirm';
 import { ReviewPanel } from '@/components/agents/ReviewPanel';
 import { PreviewDialog } from '@/components/surveys/SurveyRunner';
 import { ShareDialog } from '@/components/surveys/ShareDialog';
+import { QuestionList, questionIcons } from '@/components/surveys/QuestionList';
 import { applyReviewSuggestion, newQuestion } from '@/lib/mock-agents';
 import {
   changeQuestionType,
   copyToDraft,
   publishSurvey,
-  reorderQuestions,
+  moveQuestionToIndex,
   supersedeIssues,
   supersedeFlowIssues,
   typeLabels,
@@ -46,13 +42,6 @@ import {
 } from '@/lib/survey-utils';
 import { cn } from '@/lib/utils';
 
-const questionIcons = {
-  single_choice: CircleDot,
-  multiple_choice: ListChecks,
-  text: Type,
-  rating: Star,
-  nps: BarChart3,
-};
 const questionTypes = Object.keys(typeLabels) as QuestionType[];
 export default function BuilderPage() {
   const { id } = useParams();
@@ -78,21 +67,10 @@ function BuilderEditor({ source, initialReview }: { source: Survey; initialRevie
   const [preview, setPreview] = useState(false);
   const [share, setShare] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
-  const questionList = useRef<HTMLDivElement>(null);
   const readOnly = buffer.status === 'published';
   const dirty = !readOnly && JSON.stringify([buffer, review]) !== baseline;
   const selected = buffer.questions.find((q) => q.id === selectedId);
   const selectedIndex = buffer.questions.findIndex((q) => q.id === selectedId);
-  useEffect(() => {
-    const list = questionList.current;
-    const item = list?.querySelector('[aria-pressed="true"]')?.parentElement;
-    if (!list || !item || list.scrollWidth <= list.clientWidth) return;
-    const bounds = list.getBoundingClientRect();
-    const selectedBounds = item.getBoundingClientRect();
-    if (selectedBounds.left < bounds.left) list.scrollLeft += selectedBounds.left - bounds.left;
-    else if (selectedBounds.right > bounds.right)
-      list.scrollLeft += selectedBounds.right - bounds.right;
-  }, [selectedId]);
   function updateQuestion(next: Question) {
     if (readOnly) return;
     setBuffer((prev) => ({
@@ -108,8 +86,11 @@ function BuilderEditor({ source, initialReview }: { source: Survey; initialRevie
     setSelectedId(question.id);
     setErrors([]);
   }
-  function moveQuestion(index: number, direction: -1 | 1) {
-    setBuffer({ ...buffer, questions: reorderQuestions(buffer.questions, index, direction) });
+  function moveQuestion(from: number, to: number) {
+    if (readOnly) return;
+    const questions = moveQuestionToIndex(buffer.questions, from, to);
+    if (questions === buffer.questions) return;
+    setBuffer({ ...buffer, questions });
     setReview(supersedeFlowIssues(review));
   }
   async function remove(question: Question) {
@@ -317,61 +298,18 @@ function BuilderEditor({ source, initialReview }: { source: Survey; initialRevie
             <h2 className="text-[13px] font-semibold">Questions</h2>
             <Badge>{buffer.questions.length}</Badge>
           </div>
-          <div ref={questionList} className="space-y-2">
-            {buffer.questions.map((q, index) => {
-              const Icon = questionIcons[q.type];
-              return (
-                <div
-                  key={q.id}
-                  className={cn('question-list-item', selectedId === q.id && 'selected')}
-                >
-                  <button
-                    className="flex min-w-0 flex-1 items-start gap-2.5 p-3 text-left"
-                    onClick={() => setSelectedId(q.id)}
-                    aria-pressed={selectedId === q.id}
-                  >
-                    <span className="mt-0.5 text-[12px] text-slate-400">
-                      {String(index + 1).padStart(2, '0')}
-                    </span>
-                    <span className="min-w-0">
-                      <span className="line-clamp-2 text-[13px] font-medium leading-5">
-                        {q.title || 'Untitled question'}
-                      </span>
-                      <span className="mt-1.5 flex items-center gap-1 text-[12px] text-slate-400">
-                        <Icon size={10} />
-                        {typeLabels[q.type]}
-                      </span>
-                    </span>
-                  </button>
-                  {!readOnly && selectedId === q.id && (
-                    <div className="flex flex-col justify-center border-l border-teal-100 px-1">
-                      <button
-                        className="reorder-button"
-                        aria-label={`Move question ${index + 1} up`}
-                        disabled={index === 0}
-                        onClick={() => moveQuestion(index, -1)}
-                      >
-                        <ArrowUp size={12} />
-                      </button>
-                      <button
-                        className="reorder-button"
-                        aria-label={`Move question ${index + 1} down`}
-                        disabled={index === buffer.questions.length - 1}
-                        onClick={() => moveQuestion(index, 1)}
-                      >
-                        <ArrowDown size={12} />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+          <QuestionList
+            questions={buffer.questions}
+            selectedId={selectedId}
+            readOnly={readOnly}
+            onSelect={setSelectedId}
+            onReorder={moveQuestion}
+          />
           {!readOnly && <div className="mt-4">{addMenu}</div>}
           <p className="mt-4 text-[12px] leading-5 text-slate-400">
             {readOnly
               ? 'Published questions are locked.'
-              : 'Select a question to edit. Use the arrows to adjust the flow.'}
+              : 'Select a question to edit. Drag the handle to reorder.'}
           </p>
         </aside>
         {selected ? (

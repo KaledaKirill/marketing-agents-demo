@@ -813,24 +813,6 @@
     background: #eef5e8;
     color: #315c3a;
   }
-  .question-list-item.selected > button > span:first-child {
-    color: #386c43;
-  }
-  .reorder-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 27px;
-    height: 30px;
-    border-radius: 4px;
-    color: #4d7c50;
-  }
-  .reorder-button:hover:not(:disabled) {
-    background: #dbe9d1;
-  }
-  .reorder-button:disabled {
-    opacity: 0.3;
-  }
   .toggle {
     appearance: none;
     position: relative;

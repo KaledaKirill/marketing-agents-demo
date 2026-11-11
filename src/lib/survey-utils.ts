@@ -65,10 +65,22 @@ export function reorderQuestions(
   index: number,
   direction: -1 | 1,
 ): Question[] {
-  const target = index + direction;
-  if (target < 0 || target >= questions.length) return questions;
+  return moveQuestionToIndex(questions, index, index + direction);
+}
+export function moveQuestionToIndex(questions: Question[], from: number, to: number): Question[] {
+  if (
+    !Number.isInteger(from) ||
+    !Number.isInteger(to) ||
+    from < 0 ||
+    from >= questions.length ||
+    to < 0 ||
+    to >= questions.length ||
+    from === to
+  )
+    return questions;
   const result = [...questions];
-  [result[index], result[target]] = [result[target], result[index]];
+  const [question] = result.splice(from, 1);
+  result.splice(to, 0, question);
   return result.map((q, order) => ({ ...q, order }));
 }
 export function copyToDraft(source: Survey): { survey: Survey; review: AIReview } {

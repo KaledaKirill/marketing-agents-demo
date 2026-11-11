@@ -48,7 +48,7 @@ npm run format
 - **Critic order suggestions:** generated EV, smartphone, and general studies include an open question early in the draft; the critic can move it to the end. The brand example suggests moving familiarity to the beginning. Apply Fix updates the actual sequence and preserves question IDs. Manual reordering supersedes outstanding flow suggestions.
 - **Local response counts:** the original EV and smartphone studies include 48 and 32 example response records. New submissions add to these operational counts, independently of dashboard fixtures.
 
-Optional P1 items are intentionally excluded: dark mode, drag-and-drop ordering, additional topics, and elaborate animation. Accessible up/down controls provide question ordering.
+Question order supports drag and drop with a mouse or touch using the grip beside each question. Keyboard users can focus the grip, press Space to pick up a question, use arrow keys to move it, then press Space to drop it or Escape to cancel. Reordering preserves question IDs and marks outstanding flow suggestions as superseded. Published questionnaires stay locked.
 
 ## GitHub Pages
 

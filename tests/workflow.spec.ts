@@ -142,7 +142,10 @@ test('published editing creates a draft copy and draft editing supports all ques
   await page.getByRole('button', { name: 'Add option', exact: true }).click();
   await page.getByLabel('Option 3', { exact: true }).fill('Price');
   await page.getByLabel('Required question').uncheck();
-  await page.getByRole('button', { name: 'Move question 1 down' }).click();
+  await page.getByRole('button', { name: 'Reorder question 1', exact: true }).focus();
+  await page.keyboard.press('Space');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Space');
   await page.getByRole('button', { name: 'Add question', exact: true }).click();
   await page.getByRole('menuitem', { name: 'Text response', exact: true }).click();
   await page.getByLabel('Question wording').fill('One more detail?');

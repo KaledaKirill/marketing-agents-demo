@@ -15,6 +15,7 @@ import {
   copyToDraft,
   publishSurvey,
   reorderQuestions,
+  moveQuestionToIndex,
   supersedeIssues,
   supersedeFlowIssues,
   validateAnswer,
@@ -113,6 +114,24 @@ describe('question editing and publication', () => {
     expect(result[1].id).toBe(questions[0].id);
     expect(result.map((q) => q.order)).toEqual([0, 1, 2, 3, 4, 5, 6]);
     expect(reorderQuestions(questions, 0, -1)).toEqual(questions);
+  });
+  it('moves questions across the list while preserving content and contiguous order', () => {
+    const questions = generateSurvey('EV customer satisfaction').questions;
+    const snapshot = structuredClone(questions);
+    const moved = moveQuestionToIndex(questions, 0, questions.length - 1);
+    expect(moved.map((q) => q.id)).toEqual([...questions.slice(1), questions[0]].map((q) => q.id));
+    expect(moved.at(-1)).toEqual({ ...questions[0], order: questions.length - 1 });
+    expect(moved.map((q) => q.order)).toEqual(questions.map((_, index) => index));
+    expect(moveQuestionToIndex(moved, moved.length - 1, 0)).toEqual(snapshot);
+    expect(questions).toEqual(snapshot);
+    for (const [from, to] of [
+      [-1, 0],
+      [0, questions.length],
+      [2, 2],
+      [0.5, 2],
+    ]) {
+      expect(moveQuestionToIndex(questions, from, to)).toBe(questions);
+    }
   });
   it('rejects empty studies, empty wording, duplicate and empty options', () => {
     const survey = generateSurvey('EV satisfaction');
